@@ -106,7 +106,7 @@ export async function renderStudentForm(params = {}) {
               <div class="form-group">
                 <label class="form-label" for="school">Centre</label>
                 <input type="text" id="school" name="school" class="form-control"
-                  value="${escapeHtml(v.school || '')}" placeholder="e.g. Sydenham High School" />
+                  value="${escapeHtml(v.school || 'Sydenham')}" placeholder="e.g. Sydenham High School" />
               </div>
               <div class="form-group">
                 <label class="form-label" for="startDate">Date Joined Centre</label>
