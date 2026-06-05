@@ -243,13 +243,25 @@ export async function updateUser(id, data) {
 // ================================================================
 
 export async function getDashboardStats() {
-  const [students, reports, tutors] = await Promise.all([
+  // Fetch each collection independently — tutors don't have permission
+  // to list all users, so that query is allowed to fail gracefully.
+  const [studentsSnap, reportsSnap] = await Promise.all([
     getDocs(query(collection(db, 'students'), where('active', '==', true))),
     getDocs(query(collection(db, 'reports'), orderBy('createdAt', 'desc'))),
-    getDocs(query(collection(db, 'users'), where('role', '==', 'tutor'), where('active', '==', true))),
   ]);
 
-  const allReports = reports.docs.map(d => ({ id: d.id, ...d.data() }));
+  // Only admins/managers can list all users — fail silently for tutors
+  let tutorCount = null;
+  try {
+    const tutorsSnap = await getDocs(
+      query(collection(db, 'users'), where('role', '==', 'tutor'), where('active', '==', true))
+    );
+    tutorCount = tutorsSnap.size;
+  } catch (_) {
+    // Tutor role — no permission to list all users, that's fine
+  }
+
+  const allReports = reportsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
   const now = new Date();
 
   const thisMonth = allReports.filter(r => {
@@ -272,14 +284,15 @@ export async function getDashboardStats() {
     : null;
 
   return {
-    totalStudents: students.size,
-    totalTutors: tutors.size,
-    draft: allReports.filter(r => r.status === 'draft').length,
-    submitted: allReports.filter(r => r.status === 'submitted').length,
-    approved: allReports.filter(r => r.status === 'approved').length,
-    sent: allReports.filter(r => r.status === 'sent').length,
+    totalStudents:    studentsSnap.size,
+    totalTutors:      tutorCount,
+    draft:            allReports.filter(r => r.status === 'draft').length,
+    submitted:        allReports.filter(r => r.status === 'submitted').length,
+    approved:         allReports.filter(r => r.status === 'approved').length,
+    sent:             allReports.filter(r => r.status === 'sent').length,
     createdThisMonth: thisMonth.length,
-    sentThisMonth: sentThisMonth.length,
+    sentThisMonth:    sentThisMonth.length,
     avgScore,
   };
 }
+
