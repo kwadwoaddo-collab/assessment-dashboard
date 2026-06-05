@@ -25,6 +25,7 @@ import { renderReportsList, initReportsList } from './pages/reports/list.js';
 import { renderReportDetail, initReportDetail } from './pages/reports/detail.js';
 import { renderReportApprove, initReportApprove } from './pages/reports/approve.js';
 import { renderSettings, initSettings } from './pages/settings.js';
+import { renderHelp, initHelp } from './pages/help.js';
 
 // ── App Shell ──────────────────────────────────────────────────
 function renderAppShell() {
@@ -98,6 +99,7 @@ function registerRoutes() {
   r('report-detail',   renderReportDetail,  initReportDetail,  'Report Detail');
   r('report-approve',  renderReportApprove, initReportApprove, 'Review Report', true);
   r('settings',        renderSettings,      initSettings,      'Settings',     true);
+  r('help',            renderHelp,          initHelp,          'Help & Guide');
 
   // Login (no auth guard)
   registerRoute('login', () => renderLogin());
