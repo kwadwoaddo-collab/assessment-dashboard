@@ -55,8 +55,8 @@ export async function renderTutorForm(params = {}) {
     <div>
       <div class="page-header">
         <div>
-          <h1 class="page-title">${isEdit ? 'Edit Tutor' : 'Add New Tutor'}</h1>
-          <p class="page-subtitle">${isEdit ? `Editing: ${escapeHtml(v.name || '')}` : 'Create a new tutor account'}</p>
+          <h1 class="page-title">${isEdit ? 'Edit Staff Member' : 'Invite Staff Member'}</h1>
+          <p class="page-subtitle">${isEdit ? `Editing: ${escapeHtml(v.name || '')}` : 'Create an account and send a sign-in link'}</p>
         </div>
         <div class="page-header-actions">
           <button class="btn btn-secondary" id="btn-cancel">Cancel</button>
@@ -84,16 +84,18 @@ export async function renderTutorForm(params = {}) {
                 ${isEdit ? 'disabled' : ''} required />
               ${isEdit
                 ? '<span class="form-hint">Email cannot be changed after account creation.</span>'
-                : '<span class="form-hint">A sign-in link will be emailed to the tutor automatically.</span>'}
+                : '<span class="form-hint">A sign-in link will be emailed to them automatically — no password needed.</span>'}
             </div>
 
             ${!isEdit ? `
             <div class="form-group mt-2">
-              <label class="form-label" for="tutor-role">Role</label>
+              <label class="form-label" for="tutor-role">Role <span class="required">*</span></label>
               <select id="tutor-role" name="role" class="form-control">
-                <option value="tutor">Tutor</option>
-                <option value="manager">Manager</option>
+                <option value="tutor">Tutor — can create & submit reports</option>
+                <option value="manager">Manager — can approve reports & view all</option>
+                <option value="admin">Admin — full system access</option>
               </select>
+              <span class="form-hint" id="role-hint">Select the appropriate access level.</span>
             </div>` : ''}
           </div>
 
@@ -101,8 +103,8 @@ export async function renderTutorForm(params = {}) {
           ${!isEdit ? `
           <div style="background:rgba(20,184,166,0.06);border:1px solid rgba(20,184,166,0.2);border-radius:12px;padding:16px;margin-bottom:20px;font-size:0.85rem;color:var(--text-secondary);line-height:1.6;">
             <strong style="color:var(--teal-400);">✉ Passwordless sign-in</strong><br/>
-            The tutor will receive a sign-in link by email. They click it and are logged in instantly — no password needed.
-            You can resend the link anytime from the Tutors list.
+            The person will receive a sign-in link by email. They click it and are logged in instantly — no password needed.
+            You can resend the link anytime from the Staff list.
           </div>` : ''}
 
           <div id="form-error" class="form-error" style="display:none;padding:10px;background:rgba(244,63,94,0.1);border-radius:8px;border:1px solid rgba(244,63,94,0.3);margin-bottom:16px;"></div>
