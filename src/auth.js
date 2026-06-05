@@ -98,19 +98,16 @@ export async function getUserById(uid) {
 // ── Magic Link (passwordless) ──────────────────────────────────
 
 /**
- * Send a magic sign-in link to the given email address.
- * The user will receive an email and, on clicking the link, land back on
- * the app where `completeMagicLinkSignIn` will complete the flow.
+ * Send a Firebase magic sign-in link to the given email address.
+ * Firebase sends the email using the template configured in Firebase Console
+ * (Authentication → Templates → Sign-in link).
  */
 export async function sendMagicLink(email) {
   const actionCodeSettings = {
-    // Redirect back to the app root; the query param lets main.js detect the link.
     url: window.location.origin + '/?magiclink=1',
     handleCodeInApp: true,
   };
   await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-  // Persist the email so we can retrieve it when the link is clicked
-  // (the two page-loads may be in different browser sessions).
   window.localStorage.setItem('emailForSignIn', email);
 }
 

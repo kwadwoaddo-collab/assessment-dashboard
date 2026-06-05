@@ -167,9 +167,9 @@ export function initTutorForm(params = {}) {
       // Step 3: Sign the secondary session out (good housekeeping)
       await secondaryAuth.signOut();
 
-      // Step 4: Send the tutor their magic sign-in link
+      // Step 4: Send the tutor their magic sign-in link + branded invite email
       btnSave.textContent = 'Sending invite…';
-      await sendMagicLink(email);
+      await sendMagicLink(email, name);
 
       toast.success(`✉ Account created & invite sent to ${name}`);
       navigate('tutors');
