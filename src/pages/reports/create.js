@@ -448,12 +448,25 @@ export function initReportCreate(params = {}) {
     refreshStep(params.reportId);
   });
 
-  document.getElementById('btn-next')?.addEventListener('click', () => {
+  document.getElementById('btn-next')?.addEventListener('click', async () => {
     let valid = false;
     if (currentStep === 1) valid = collectStep1();
     else if (currentStep === 2) valid = collectStep2();
     else if (currentStep === 3) valid = collectStep3();
-    if (valid) { currentStep++; refreshStep(params.reportId); }
+    if (!valid) return;
+
+    // Auto-save draft when moving to step 3 so the report gets an ID
+    // and attachments (photos/documents) become immediately available.
+    if (currentStep === 2) {
+      const btn = document.getElementById('btn-next');
+      if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+      const id = await saveReport();
+      if (btn) { btn.disabled = false; btn.textContent = 'Next →'; }
+      if (!id) return; // save failed — stay on step 2
+    }
+
+    currentStep++;
+    refreshStep(params.reportId);
   });
 
   document.getElementById('btn-save-draft')?.addEventListener('click', async () => {
