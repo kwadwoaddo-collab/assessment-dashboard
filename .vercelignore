@@ -1,0 +1,31 @@
+# Environment files – never deploy secrets
+.env
+.env.local
+.env.*.local
+
+# Dependencies (Vercel installs these fresh)
+node_modules/
+api/node_modules/
+
+# Version control
+.git/
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local dev / OS artefacts
+.DS_Store
+.vscode/
+.idea/
+
+# Firebase local tooling (not needed on Vercel)
+.firebaserc
+firebase.json
+firestore.rules
+firestore.indexes.json
+storage.rules
+
+# Seed scripts
+seed-admin.mjs
