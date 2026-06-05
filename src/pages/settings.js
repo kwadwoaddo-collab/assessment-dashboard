@@ -49,63 +49,51 @@ export function renderSettings() {
         </div>
       </div>
 
-      <!-- EmailJS Setup Guide -->
+      <!-- Email Setup – Resend -->
       <div class="card mb-3">
         <div class="card-header">
           <div>
-            <div class="card-title">Email Setup (EmailJS)</div>
-            <div class="card-subtitle">Required to send PDF reports to parents automatically</div>
+            <div class="card-title">Email Setup</div>
+            <div class="card-subtitle">PDF reports are sent to parents via Resend</div>
           </div>
+          <span class="badge badge-active">✓ Configured</span>
         </div>
 
-        <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:16px;margin-bottom:16px;">
-          <p style="font-size:0.85rem;font-weight:600;color:var(--amber-500);margin-bottom:8px;">⚠ Email not yet configured</p>
-          <p style="font-size:0.825rem;color:var(--text-secondary);">
-            Until EmailJS is set up, clicking "Send to Parent" will download the PDF locally instead.
-            Follow the steps below to enable automatic email delivery.
+        <!-- Status: configured -->
+        <div style="background:rgba(20,184,166,0.06);border:1px solid rgba(20,184,166,0.2);border-radius:10px;padding:16px;margin-bottom:20px;">
+          <p style="font-size:0.85rem;font-weight:600;color:var(--teal-400);margin-bottom:6px;">✓ Email delivery is active</p>
+          <p style="font-size:0.825rem;color:var(--text-secondary);line-height:1.6;">
+            Reports are sent automatically when you click <strong>"Send to Parent"</strong>.
+            The PDF is attached directly to the email. Parents can reply to <strong>info@sydenhamasc.co.uk</strong>.
           </p>
         </div>
 
-        <div style="display:flex;flex-direction:column;gap:16px;">
-          ${[
-            { n:1, title:'Create a free EmailJS account', detail:'Go to <a href="https://emailjs.com" target="_blank" style="color:var(--teal-400)">emailjs.com</a> and sign up. Free plan includes 200 emails/month.' },
-            { n:2, title:'Add an Email Service', detail:'In the EmailJS dashboard, go to Email Services → Add Service. Connect Gmail or Outlook (use info@sydenhamasc.co.uk).' },
-            { n:3, title:'Create an Email Template', detail:'Go to Email Templates → Create New. Use the template below. Copy the Template ID.' },
-            { n:4, title:'Get your Public Key', detail:'Go to Account → General → Public Key. Copy it.' },
-            { n:5, title:'Add keys to .env file', detail:'Open the <code style="background:rgba(148,163,184,0.15);padding:2px 6px;border-radius:4px;">.env</code> file in the project and replace the three YOUR_* placeholders with your real values, then restart the dev server.' },
-          ].map(s => `
-            <div style="display:flex;gap:14px;align-items:flex-start;">
-              <div style="width:28px;height:28px;border-radius:50%;background:var(--teal-500);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:white;flex-shrink:0;">${s.n}</div>
-              <div>
-                <div style="font-weight:600;font-size:0.875rem;margin-bottom:3px;">${s.title}</div>
-                <div style="font-size:0.8rem;color:var(--text-secondary);">${s.detail}</div>
-              </div>
-            </div>`).join('')}
+        <div class="info-block">
+          <div class="info-block-title">Email Configuration</div>
+          <div class="info-row"><span class="info-row-label">Provider</span><span class="info-row-value">Resend (resend.com)</span></div>
+          <div class="info-row"><span class="info-row-label">From</span><span class="info-row-value">reports@sprintscaleit.co.uk</span></div>
+          <div class="info-row"><span class="info-row-label">Reply-To</span><span class="info-row-value">info@sydenhamasc.co.uk</span></div>
+          <div class="info-row"><span class="info-row-label">Attachment</span><span class="info-row-value">PDF report included automatically</span></div>
+          <div class="info-row"><span class="info-row-label">Limit</span><span class="info-row-value">3,000 emails / month · 100 / day (free tier)</span></div>
         </div>
 
         <div class="divider"></div>
 
-        <div class="card-title mb-2" style="font-size:0.875rem;">EmailJS Template (copy this exactly)</div>
-        <pre style="background:rgba(15,23,42,0.6);border:1px solid var(--border-color);border-radius:10px;padding:16px;font-size:0.78rem;color:var(--text-secondary);overflow-x:auto;line-height:1.7;">Subject: Student Progress Report – {{student_name}}
+        <div class="card-title mb-2" style="font-size:0.875rem;">What the parent receives</div>
+        <div style="background:rgba(15,23,42,0.6);border:1px solid var(--border-color);border-radius:10px;padding:16px;font-size:0.8rem;color:var(--text-secondary);line-height:1.8;">
+          <strong style="color:var(--text-primary);">From:</strong> Sydenham After School Club &lt;reports@sprintscaleit.co.uk&gt;<br/>
+          <strong style="color:var(--text-primary);">Subject:</strong> Assessment Report – [Student Name] – [Date]<br/>
+          <strong style="color:var(--text-primary);">Attachment:</strong> Assessment_Report_[Student]_[Subject]_[Date].pdf<br/><br/>
+          The email includes the student name, subject, assessment type, and report date in a branded HTML layout.
+          The full PDF report is attached. Parents can reply directly to info@sydenhamasc.co.uk.
+        </div>
 
-Dear {{parent_name}},
-
-Please find attached the latest assessment report for {{student_name}}.
-
-Subject:          {{subject_name}}
-Assessment Type:  {{assessment_type}}
-Report Date:      {{report_date}}
-
-If you have any questions regarding this report, please do not hesitate 
-to contact us.
-
-Kind regards,
-
-{{centre_name}}
-{{centre_email}}
-
----
-This report was generated by the Sydenham ASC Assessment Portal.</pre>
+        <div style="margin-top:12px;">
+          <a href="https://resend.com/emails" target="_blank" class="btn btn-secondary btn-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            View Sent Emails (Resend Dashboard)
+          </a>
+        </div>
       </div>
 
       <!-- Firebase Info -->
@@ -113,7 +101,7 @@ This report was generated by the Sydenham ASC Assessment Portal.</pre>
         <div class="card-title mb-2">Firebase Configuration</div>
         <div class="info-block">
           <div class="info-row"><span class="info-row-label">Project ID</span><span class="info-row-value">assessment-dashboard-5610a</span></div>
-          <div class="info-row"><span class="info-row-label">Auth</span><span class="info-row-value"><span class="badge badge-active">Email/Password Enabled</span></span></div>
+          <div class="info-row"><span class="info-row-label">Auth</span><span class="info-row-value"><span class="badge badge-active">Email/Password</span> &nbsp;<span class="badge badge-active">Magic Link</span></span></div>
           <div class="info-row"><span class="info-row-label">Database</span><span class="info-row-value">Cloud Firestore</span></div>
           <div class="info-row"><span class="info-row-label">Region</span><span class="info-row-value">europe-west2 (London)</span></div>
         </div>
