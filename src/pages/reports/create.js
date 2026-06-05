@@ -4,7 +4,7 @@
 
 import {
   getStudents, getStudentById, getReportById,
-  createReport, updateReport, submitReport
+  createReport, updateReport, submitReport, findExistingDraft
 } from '../../db.js';
 import { getState, isAdmin } from '../../store.js';
 import { navigate } from '../../router.js';
@@ -399,14 +399,32 @@ function collectStep3() {
 async function saveReport(preserveStatus = false) {
   try {
     if (formData.id) {
+      // Already has an ID — just update the existing document
       const statusToSave = preserveStatus ? formData.status : 'draft';
       await updateReport(formData.id, { ...formData, attachments, status: statusToSave });
       return formData.id;
-    } else {
-      const id = await createReport({ ...formData, attachments, status: 'draft' });
-      formData.id = id;
-      return id;
     }
+
+    // No ID yet — check if a draft already exists for this
+    // student + subject + assessmentType (Gmail-style dedup)
+    const existing = await findExistingDraft(
+      formData.studentId,
+      formData.subject,
+      formData.assessmentType
+    );
+
+    if (existing) {
+      // Reuse the existing draft — merge new data into it
+      formData.id = existing.id;
+      await updateReport(existing.id, { ...formData, attachments, status: 'draft' });
+      toast.info('Resuming your existing draft for this student & subject.');
+      return existing.id;
+    }
+
+    // No existing draft — create a fresh one
+    const id = await createReport({ ...formData, attachments, status: 'draft' });
+    formData.id = id;
+    return id;
   } catch (e) {
     toast.error('Failed to save: ' + e.message);
     return null;

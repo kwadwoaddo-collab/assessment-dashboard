@@ -138,6 +138,28 @@ export async function createReport(data) {
   return docRef.id;
 }
 
+/**
+ * Find an existing DRAFT report for the same student + subject + assessmentType
+ * created by the current tutor. Returns the report object or null.
+ * Used to prevent duplicate drafts (Gmail-style: one draft per context).
+ */
+export async function findExistingDraft(studentId, subject, assessmentType) {
+  if (!studentId || !subject || !assessmentType) return null;
+  const currentUid = uid();
+  const q = query(
+    collection(db, 'reports'),
+    where('studentId',      '==', studentId),
+    where('subject',        '==', subject),
+    where('assessmentType', '==', assessmentType),
+    where('status',         '==', 'draft'),
+    where('createdBy',      '==', currentUid),
+    limit(1)
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  return { id: snap.docs[0].id, ...snap.docs[0].data() };
+}
+
 export async function updateReport(id, data) {
   await updateDoc(doc(db, 'reports', id), {
     ...data,
