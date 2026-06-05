@@ -2,7 +2,7 @@
 // Help / User Guide Page (role-based)
 // ================================================================
 
-import { getState } from '../../store.js';
+import { getState } from '../store.js';
 
 // ── Shared accordion component ───────────────────────────────────
 function section(number, title, icon, content) {
