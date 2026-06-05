@@ -8,7 +8,9 @@ import { navigate } from '../router.js';
 
 export async function renderDashboard() {
   const user = getState('currentUser');
-  const stats = await getDashboardStats();
+  // Tutors see only their own stats; admins & managers see the full centre
+  const isTutorView = user?.role === 'tutor';
+  const stats = await getDashboardStats(isTutorView ? user.uid : null);
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -25,7 +27,7 @@ export async function renderDashboard() {
       <div class="page-header">
         <div>
           <h1 class="page-title">${greeting()}, ${user?.displayName?.split(' ')[0] || 'there'} 👋</h1>
-          <p class="page-subtitle">Here's an overview of Sydenham After School Club · ${monthName}</p>
+          <p class="page-subtitle">${isTutorView ? 'Your reports overview' : `Here's an overview of Sydenham After School Club`} · ${monthName}</p>
         </div>
         <div class="page-header-actions">
           <button class="btn btn-primary" id="btn-new-report">

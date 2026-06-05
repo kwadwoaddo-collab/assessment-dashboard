@@ -242,12 +242,20 @@ export async function updateUser(id, data) {
 // DASHBOARD STATS
 // ================================================================
 
-export async function getDashboardStats() {
-  // Fetch each collection independently — tutors don't have permission
-  // to list all users, so that query is allowed to fail gracefully.
+/**
+ * Get dashboard stats.
+ * - Admins/managers: pass no tutorId → see full centre stats.
+ * - Tutors: pass their uid → see only their own reports & students.
+ */
+export async function getDashboardStats(tutorId = null) {
+  // If tutorId is given, fetch only that tutor's reports
+  const reportsQuery = tutorId
+    ? query(collection(db, 'reports'), where('createdBy', '==', tutorId), orderBy('createdAt', 'desc'))
+    : query(collection(db, 'reports'), orderBy('createdAt', 'desc'));
+
   const [studentsSnap, reportsSnap] = await Promise.all([
     getDocs(query(collection(db, 'students'), where('active', '==', true))),
-    getDocs(query(collection(db, 'reports'), orderBy('createdAt', 'desc'))),
+    getDocs(reportsQuery),
   ]);
 
   // Only admins/managers can list all users — fail silently for tutors
@@ -263,6 +271,11 @@ export async function getDashboardStats() {
 
   const allReports = reportsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
   const now = new Date();
+
+  // For tutors: count only students they've actually written reports for
+  const totalStudents = tutorId
+    ? new Set(allReports.map(r => r.studentId).filter(Boolean)).size
+    : studentsSnap.size;
 
   const thisMonth = allReports.filter(r => {
     const d = r.createdAt?.toDate ? r.createdAt.toDate() : new Date(r.createdAt);
@@ -284,7 +297,7 @@ export async function getDashboardStats() {
     : null;
 
   return {
-    totalStudents:    studentsSnap.size,
+    totalStudents,
     totalTutors:      tutorCount,
     draft:            allReports.filter(r => r.status === 'draft').length,
     submitted:        allReports.filter(r => r.status === 'submitted').length,
@@ -295,4 +308,3 @@ export async function getDashboardStats() {
     avgScore,
   };
 }
-
