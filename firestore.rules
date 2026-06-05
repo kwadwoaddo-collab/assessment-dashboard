@@ -3,48 +3,58 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/sydenham-asc/documents {
 
-    // Helper: is the request from an authenticated user?
+    // ── Helper: is the request authenticated? ────────────────────
     function isAuth() {
       return request.auth != null;
     }
 
-    // Helper: is the user an admin?
-    function isAdmin() {
-      return isAuth() &&
-        get(/databases/sydenham-asc/documents/users/$(request.auth.uid)).data.role == 'admin';
+    // ── Safe role lookup (returns '' if doc doesn't exist) ───────
+    function userRole() {
+      return isAuth() && exists(/databases/sydenham-asc/documents/users/$(request.auth.uid))
+        ? get(/databases/sydenham-asc/documents/users/$(request.auth.uid)).data.role
+        : '';
     }
 
-    // Helper: is the user a tutor?
-    function isTutor() {
-      return isAuth() &&
-        get(/databases/sydenham-asc/documents/users/$(request.auth.uid)).data.role == 'tutor';
-    }
+    function isAdmin()   { return userRole() == 'admin'; }
+    function isManager() { return userRole() == 'manager'; }
+    function isTutor()   { return userRole() == 'tutor'; }
+    function isStaff()   { return isAdmin() || isManager() || isTutor(); }
 
-    // ── Users Collection ────────────────────────────────────────
+    // ── Users Collection ─────────────────────────────────────────
+    // Anyone can read their own profile.
+    // Admins & managers can read all users (needed for tutor lists).
     match /users/{userId} {
-      allow read: if isAuth() && (request.auth.uid == userId || isAdmin());
+      allow read:   if isAuth() && (request.auth.uid == userId || isAdmin() || isManager());
       allow create: if isAdmin();
       allow update: if isAuth() && (request.auth.uid == userId || isAdmin());
       allow delete: if false;
     }
 
-    // ── Students Collection ────────────────────────────────────
+    // ── Students Collection ──────────────────────────────────────
+    // Any authenticated staff member can read students.
+    // Only admins & managers can create/update/deactivate students.
     match /students/{studentId} {
-      allow read: if isAuth();
-      allow create, update: if isAdmin();
-      allow delete: if false;
+      allow read:          if isAuth();
+      allow create, update: if isAdmin() || isManager();
+      allow delete:        if false;
     }
 
-    // ── Reports Collection ─────────────────────────────────────
+    // ── Reports Collection ───────────────────────────────────────
+    // All staff can read all reports.
+    // Tutors can create reports.
+    // Tutors can update their OWN draft/rejected reports.
+    // Admins & managers can update any report (approve/reject/edit).
+    // Only admins can delete draft reports.
     match /reports/{reportId} {
-      allow read: if isAuth();
-      allow create: if isAuth() && (isTutor() || isAdmin());
+      allow read:   if isAuth();
+      allow create: if isAuth() && (isTutor() || isAdmin() || isManager());
       allow update: if isAuth() && (
         (resource.data.createdBy == request.auth.uid &&
           resource.data.status in ['draft', 'rejected']) ||
-        isAdmin()
+        isAdmin() ||
+        isManager()
       );
-      allow delete: if isAdmin() && resource.data.status == 'draft';
+      allow delete: if (isAdmin() || isManager()) && resource.data.status == 'draft';
     }
   }
 }
