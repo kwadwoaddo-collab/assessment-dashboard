@@ -9,7 +9,7 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { createUserRecord } from '../../auth.js';
-import { updateUser } from '../../db.js';
+import { updateUser, findUserByEmail } from '../../db.js';
 import { navigate } from '../../router.js';
 import { toast } from '../../components/toast.js';
 import { escapeHtml } from '../../utils.js';
@@ -175,14 +175,34 @@ export function initTutorForm(params = {}) {
       navigate('tutors');
 
     } catch (err) {
+      // ── Account already exists: update role & resend link ──────
+      if (err.code === 'auth/email-already-in-use') {
+        try {
+          btnSave.textContent = 'Resending invite…';
+
+          // Find their existing Firestore record by email
+          const existingUser = await findUserByEmail(email);
+          if (existingUser) {
+            // Update name/role in case they've changed
+            await updateUser(existingUser.id, { name, role });
+          }
+          // Resend the magic sign-in link regardless
+          await sendMagicLink(email, name);
+
+          toast.success(`✉ Sign-in link resent to ${name}`);
+          navigate('tutors');
+        } catch (resendErr) {
+          btnSave.disabled = false;
+          btnSave.textContent = 'Create & Send Invite';
+          showError(resendErr.message || 'Failed to resend invite.');
+        }
+        return;
+      }
+
       btnSave.disabled = false;
       btnSave.textContent = isEdit ? 'Save Changes' : 'Create & Send Invite';
-      if (err.code === 'auth/email-already-in-use') {
-        showError('An account with this email already exists.');
-      } else {
-        showError(err.message || 'Failed to save. Please try again.');
-        console.error(err);
-      }
+      showError(err.message || 'Failed to save. Please try again.');
+      console.error(err);
     }
   });
 

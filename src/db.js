@@ -238,6 +238,14 @@ export async function updateUser(id, data) {
   });
 }
 
+export async function findUserByEmail(email) {
+  const snap = await getDocs(query(collection(db, 'users'), where('email', '==', email)));
+  if (snap.empty) return null;
+  const d = snap.docs[0];
+  return { id: d.id, ...d.data() };
+}
+
+
 // ================================================================
 // DASHBOARD STATS
 // ================================================================
