@@ -127,9 +127,7 @@ function renderStep(reportId) {
         </div>
         <div class="divider"></div>
         <div style="display:flex;justify-content:space-between;gap:12px;margin-top:4px;">
-          ${currentStep > 1
-            ? `<button class="btn btn-secondary" id="btn-prev">← Back</button>`
-            : `<div></div>`}
+          <button class="btn btn-secondary" id="btn-prev" style="display: ${currentStep > 1 ? 'flex' : 'none'};">← Back</button>
           <div style="display:flex;gap:10px;">
             <button class="btn btn-secondary" id="btn-save-draft">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg>
