@@ -577,6 +577,18 @@ function refreshStep(reportId) {
   else if (currentStep === 4) html = renderStep4();
   content.innerHTML = html;
 
+  // Update page title & step subtitle dynamically
+  const editMode = !!reportId;
+  const adminEdit = editMode && isAdmin() && !['draft','rejected'].includes(formData.status);
+  const titleEl = document.querySelector('.page-title');
+  if (titleEl) {
+    titleEl.textContent = editMode ? (adminEdit ? '✏️ Manager Edit' : 'Edit Report') : 'Create New Report';
+  }
+  const subtitleEl = document.querySelector('.page-subtitle');
+  if (subtitleEl) {
+    subtitleEl.innerHTML = `Step ${currentStep} of 4${adminEdit ? ' · <span style="color:var(--amber-500);font-weight:600;">Editing as Manager — changes save immediately</span>' : ''}`;
+  }
+
   // Update step indicators
   document.querySelectorAll('.step').forEach((el, i) => {
     const n = i + 1;
