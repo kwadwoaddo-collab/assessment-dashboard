@@ -568,50 +568,8 @@ export function initReportCreate(params = {}) {
 }
 
 function refreshStep(reportId) {
-  const content = document.getElementById('step-content');
-  if (!content) return;
-  let html = '';
-  if (currentStep === 1) html = renderStep1();
-  else if (currentStep === 2) html = renderStep2();
-  else if (currentStep === 3) html = renderStep3();
-  else if (currentStep === 4) html = renderStep4();
-  content.innerHTML = html;
-
-  // Update page title & step subtitle dynamically
-  const editMode = !!reportId;
-  const adminEdit = editMode && isAdmin() && !['draft','rejected'].includes(formData.status);
-  const titleEl = document.querySelector('.page-title');
-  if (titleEl) {
-    titleEl.textContent = editMode ? (adminEdit ? '✏️ Manager Edit' : 'Edit Report') : 'Create New Report';
-  }
-  const subtitleEl = document.querySelector('.page-subtitle');
-  if (subtitleEl) {
-    subtitleEl.innerHTML = `Step ${currentStep} of 4${adminEdit ? ' · <span style="color:var(--amber-500);font-weight:600;">Editing as Manager — changes save immediately</span>' : ''}`;
-  }
-
-  // Update step indicators
-  document.querySelectorAll('.step').forEach((el, i) => {
-    const n = i + 1;
-    el.classList.toggle('active', n === currentStep);
-    el.classList.toggle('done', n < currentStep);
-    el.querySelector('.step-circle').textContent = n < currentStep ? '✓' : String(n);
-  });
-  document.querySelectorAll('.step-connector').forEach((el, i) => {
-    el.classList.toggle('done', currentStep > i + 2);
-  });
-
-  // Show/hide nav buttons
-  const prevBtn = document.getElementById('btn-prev');
-  if (prevBtn) prevBtn.style.display = currentStep > 1 ? 'flex' : 'none';
-  const nextBtn = document.getElementById('btn-next');
-  const submitBtn = document.getElementById('btn-submit-report');
-  const approveSubmitBtn = document.getElementById('btn-approve-submit');
-  const saveAdminBtn = document.getElementById('btn-save-admin');
-
-  if (nextBtn) nextBtn.style.display = currentStep < 4 ? 'flex' : 'none';
-  if (submitBtn) submitBtn.style.display = currentStep === 4 ? 'flex' : 'none';
-  if (approveSubmitBtn) approveSubmitBtn.style.display = currentStep === 4 ? 'flex' : 'none';
-  if (saveAdminBtn) saveAdminBtn.style.display = currentStep === 4 ? 'flex' : 'none';
-
+  const pageContent = document.getElementById('page-content');
+  if (!pageContent) return;
+  pageContent.innerHTML = renderStep(reportId);
   initReportCreate({ reportId });
 }
