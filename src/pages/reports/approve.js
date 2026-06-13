@@ -97,7 +97,7 @@ export async function renderReportApprove(params = {}) {
           ${report.strengths ? `<div class="feedback-block"><div class="feedback-block-title">Strengths</div><p>${escapeHtml(report.strengths)}</p></div>` : ''}
           ${report.areasForImprovement ? `<div class="feedback-block"><div class="feedback-block-title">Areas for Improvement</div><p>${escapeHtml(report.areasForImprovement)}</p></div>` : ''}
           ${report.topicsCovered ? `<div class="feedback-block"><div class="feedback-block-title">Topics Covered</div><p>${escapeHtml(report.topicsCovered)}</p></div>` : ''}
-          ${report.tutorFeedback ? `<div class="feedback-block"><div class="feedback-block-title">Tutor Feedback</div><p>${escapeHtml(report.tutorFeedback)}</p></div>` : ''}
+          ${report.additionalComments ? `<div class="feedback-block"><div class="feedback-block-title">Tutor Comments</div><p>${escapeHtml(report.additionalComments)}</p></div>` : ''}
           ${report.recommendations ? `<div class="feedback-block"><div class="feedback-block-title">Recommendations</div><p>${escapeHtml(report.recommendations)}</p></div>` : ''}
         </div>
 

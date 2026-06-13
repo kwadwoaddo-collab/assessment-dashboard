@@ -1,4 +1,17 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "reports",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "studentId",      "order": "ASCENDING" },
+        { "fieldPath": "subject",        "order": "ASCENDING" },
+        { "fieldPath": "assessmentType", "order": "ASCENDING" },
+        { "fieldPath": "status",         "order": "ASCENDING" },
+        { "fieldPath": "createdBy",      "order": "ASCENDING" },
+        { "fieldPath": "createdAt",      "order": "DESCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }

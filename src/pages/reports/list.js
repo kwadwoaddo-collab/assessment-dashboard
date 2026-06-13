@@ -2,7 +2,7 @@
 // Reports List Page
 // ================================================================
 
-import { getReports, getStudents, getUsers } from '../../db.js';
+import { getReports, getStudents, getUsers, deleteReport } from '../../db.js';
 import { navigate } from '../../router.js';
 import {
   formatDate, escapeHtml, statusLabel, workingLevelClass,
@@ -153,6 +153,9 @@ function renderReportsTable(reports, studentMap, tutorMap) {
             ${r.status === 'submitted' && isAdmin()
               ? `<button class="btn btn-accent btn-sm" data-approve-report="${r.id}">Review</button>`
               : ''}
+            ${r.status === 'draft'
+              ? `<button class="btn btn-danger btn-sm" data-delete-report="${r.id}" title="Delete this draft">Delete</button>`
+              : ''}
           </div>
         </td>
       </tr>`;
@@ -253,10 +256,32 @@ export function initReportsList(params = {}) {
 }
 
 function bindActions() {
-  document.querySelectorAll('[data-view-report]').forEach(btn => {
-    btn.addEventListener('click', () => navigate('report-detail', { id: btn.dataset.viewReport }));
-  });
-  document.querySelectorAll('[data-approve-report]').forEach(btn => {
-    btn.addEventListener('click', () => navigate('report-approve', { id: btn.dataset.approveReport }));
-  });
+  document.querySelectorAll('[data-view-report]').forEach(btn =>
+    btn.addEventListener('click', () => navigate('report-detail', { id: btn.dataset.viewReport }))
+  );
+  document.querySelectorAll('[data-approve-report]').forEach(btn =>
+    btn.addEventListener('click', () => navigate('report-approve', { id: btn.dataset.approveReport }))
+  );
+  document.querySelectorAll('[data-delete-report]').forEach(btn =>
+    btn.addEventListener('click', async () => {
+      if (!confirm('Delete this draft report? This cannot be undone.')) return;
+      const id = btn.dataset.deleteReport;
+      try {
+        await deleteReport(id);
+        // Remove from local list and re-render
+        allReports = allReports.filter(r => r.id !== id);
+        const studentMap = {};
+        students.forEach(s => { studentMap[s.id] = s; });
+        const tutorMap = {};
+        tutors.forEach(t => { tutorMap[t.id] = t; });
+        const wrapper = document.getElementById('reports-table-wrapper');
+        if (wrapper) wrapper.innerHTML = renderReportsTable(allReports, studentMap, tutorMap);
+        const subtitle = document.querySelector('.page-subtitle');
+        if (subtitle) subtitle.textContent = `${allReports.length} total report${allReports.length !== 1 ? 's' : ''}`;
+        bindActions();
+      } catch (e) {
+        alert('Failed to delete: ' + e.message);
+      }
+    })
+  );
 }

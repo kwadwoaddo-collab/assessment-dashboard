@@ -289,6 +289,16 @@ function renderStep3() {
         <textarea id="additionalComments" class="form-control" rows="4"
           placeholder="Any other comments for the parent or student not covered above…">${escapeHtml(formData.additionalComments || '')}</textarea>
       </div>
+
+      ${isAdmin() ? `
+      <div class="form-group mt-2">
+        <label class="form-label" for="managerComments">
+          Manager Comments
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-muted);margin-left:6px;">printed on the PDF (admin only)</span>
+        </label>
+        <textarea id="managerComments" class="form-control" rows="4"
+          placeholder="Manager comments or feedback…">${escapeHtml(formData.managerComments || '')}</textarea>
+      </div>` : ''}
     </div>
 
     <!-- Assessment Attachments -->
@@ -348,7 +358,9 @@ function renderStep4(adminEdit = false) {
           <div class="info-block">
             <div class="info-block-title">Feedback Summary</div>
             <div class="info-row"><span class="info-row-label">Strengths</span><span class="info-row-value truncate" style="max-width:160px;">${escapeHtml((formData.strengths || '').slice(0,60))}${formData.strengths?.length > 60 ? '…' : ''}</span></div>
-            <div class="info-row"><span class="info-row-label">Tutor Feedback</span><span class="info-row-value truncate" style="max-width:160px;">${escapeHtml((formData.tutorFeedback || '').slice(0,60))}${formData.tutorFeedback?.length > 60 ? '…' : ''}</span></div>
+            <div class="info-row"><span class="info-row-label">Tutor Comments</span><span class="info-row-value truncate" style="max-width:160px;">${escapeHtml((formData.additionalComments || '').slice(0,60))}${formData.additionalComments?.length > 60 ? '…' : ''}</span></div>
+            ${formData.managerComments ? `
+            <div class="info-row"><span class="info-row-label">Manager Comments</span><span class="info-row-value truncate" style="max-width:160px;">${escapeHtml(formData.managerComments.slice(0,60))}${formData.managerComments.length > 60 ? '…' : ''}</span></div>` : ''}
           </div>
         </div>
       </div>
@@ -393,6 +405,11 @@ function collectStep3() {
   }
   Object.assign(formData, { strengths, areasForImprovement: areas, topicsCovered: topics,
     tutorFeedback: null, recommendations: recs, additionalComments: extra });
+
+  if (isAdmin()) {
+    const mgrComments = document.getElementById('managerComments')?.value.trim();
+    formData.managerComments = mgrComments || null;
+  }
   return true;
 }
 
@@ -414,7 +431,8 @@ async function saveReport(preserveStatus = false) {
     );
 
     if (existing) {
-      // Reuse the existing draft — merge new data into it
+      // Reuse the existing draft — set the ID FIRST so subsequent saves
+      // go through the update path and don't create yet another duplicate
       formData.id = existing.id;
       await updateReport(existing.id, { ...formData, attachments, status: 'draft' });
       toast.info('Resuming your existing draft for this student & subject.');
@@ -426,6 +444,7 @@ async function saveReport(preserveStatus = false) {
     formData.id = id;
     return id;
   } catch (e) {
+    console.error('[saveReport] Failed:', e);
     toast.error('Failed to save: ' + e.message);
     return null;
   }
