@@ -4,7 +4,7 @@
 
 import {
   getStudents, getStudentById, getReportById,
-  createReport, updateReport, submitReport, findExistingDraft
+  createReport, updateReport, submitReport, findExistingDraft, approveReport
 } from '../../db.js';
 import { getState, isAdmin } from '../../store.js';
 import { navigate } from '../../router.js';
@@ -86,13 +86,17 @@ function renderStep(reportId) {
   // For admin edits of live reports: save keeps current status; no re-submit needed
   const saveLabel = adminEdit ? 'Save Changes' : 'Save Draft';
   const step4Action = adminEdit
-    ? `<button class="btn btn-primary" id="btn-save-admin">
+    ? `<button class="btn btn-primary" id="btn-save-admin" style="display: ${currentStep === 4 ? 'flex' : 'none'};">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
         Save Changes
       </button>`
-    : `<button class="btn btn-primary" id="btn-submit-report">
+    : `<button class="btn btn-secondary" id="btn-submit-report" style="display: ${currentStep === 4 ? 'flex' : 'none'};">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         Submit for Approval
+      </button>
+      <button class="btn btn-success" id="btn-approve-submit" style="display: ${currentStep === 4 ? 'flex' : 'none'};">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Approve &amp; Submit
       </button>`;
 
   let content = '';
@@ -131,9 +135,8 @@ function renderStep(reportId) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg>
               ${saveLabel}
             </button>
-            ${currentStep < 4
-              ? `<button class="btn btn-primary" id="btn-next">Next →</button>`
-              : step4Action}
+            <button class="btn btn-primary" id="btn-next" style="display: ${currentStep < 4 ? 'flex' : 'none'};">Next →</button>
+            ${step4Action}
           </div>
         </div>
       </div>
@@ -517,14 +520,32 @@ export function initReportCreate(params = {}) {
     btn.disabled = true;
     btn.textContent = 'Submitting…';
     const id = await saveReport(true);
-    if (!id) { btn.disabled = false; return; }
+    if (!id) { btn.disabled = false; btn.textContent = 'Submit for Approval'; return; }
     try {
       await submitReport(id);
       toast.success('Report submitted for approval!');
       navigate('report-detail', { id });
     } catch (e) {
       btn.disabled = false;
+      btn.textContent = 'Submit for Approval';
       toast.error('Failed to submit: ' + e.message);
+    }
+  });
+
+  document.getElementById('btn-approve-submit')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btn-approve-submit');
+    btn.disabled = true;
+    btn.textContent = 'Approving…';
+    const id = await saveReport(true);
+    if (!id) { btn.disabled = false; btn.textContent = 'Approve & Submit'; return; }
+    try {
+      await approveReport(id, '');
+      toast.success('Report approved and submitted!');
+      navigate('report-detail', { id });
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = 'Approve & Submit';
+      toast.error('Failed to approve: ' + e.message);
     }
   });
 
@@ -574,8 +595,13 @@ function refreshStep(reportId) {
   if (prevBtn) prevBtn.style.display = currentStep > 1 ? 'flex' : 'none';
   const nextBtn = document.getElementById('btn-next');
   const submitBtn = document.getElementById('btn-submit-report');
+  const approveSubmitBtn = document.getElementById('btn-approve-submit');
+  const saveAdminBtn = document.getElementById('btn-save-admin');
+
   if (nextBtn) nextBtn.style.display = currentStep < 4 ? 'flex' : 'none';
   if (submitBtn) submitBtn.style.display = currentStep === 4 ? 'flex' : 'none';
+  if (approveSubmitBtn) approveSubmitBtn.style.display = currentStep === 4 ? 'flex' : 'none';
+  if (saveAdminBtn) saveAdminBtn.style.display = currentStep === 4 ? 'flex' : 'none';
 
   initReportCreate({ reportId });
 }
