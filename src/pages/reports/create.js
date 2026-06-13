@@ -418,7 +418,7 @@ async function saveReport(preserveStatus = false) {
   try {
     if (formData.id) {
       // Already has an ID — just update the existing document
-      const statusToSave = preserveStatus ? formData.status : 'draft';
+      const statusToSave = (preserveStatus && formData.status) ? formData.status : 'draft';
       await updateReport(formData.id, { ...formData, attachments, status: statusToSave });
       return formData.id;
     }
@@ -435,6 +435,7 @@ async function saveReport(preserveStatus = false) {
       // Reuse the existing draft — set the ID FIRST so subsequent saves
       // go through the update path and don't create yet another duplicate
       formData.id = existing.id;
+      formData.status = 'draft';
       await updateReport(existing.id, { ...formData, attachments, status: 'draft' });
       toast.info('Resuming your existing draft for this student & subject.');
       return existing.id;
@@ -443,6 +444,7 @@ async function saveReport(preserveStatus = false) {
     // No existing draft — create a fresh one
     const id = await createReport({ ...formData, attachments, status: 'draft' });
     formData.id = id;
+    formData.status = 'draft';
     return id;
   } catch (e) {
     console.error('[saveReport] Failed:', e);
