@@ -9,6 +9,8 @@ import {
   SUBJECTS, ASSESSMENT_TYPES, debounce
 } from '../../utils.js';
 import { isAdmin } from '../../store.js';
+import { toast } from '../../components/toast.js';
+import { confirmDialog } from '../../components/dialog.js';
 
 let allReports = [];
 let students = [];
@@ -264,7 +266,8 @@ function bindActions() {
   );
   document.querySelectorAll('[data-delete-report]').forEach(btn =>
     btn.addEventListener('click', async () => {
-      if (!confirm('Delete this draft report? This cannot be undone.')) return;
+      const confirmed = await confirmDialog('Delete this draft report? This cannot be undone.', { title: 'Delete Draft', danger: true });
+      if (!confirmed) return;
       const id = btn.dataset.deleteReport;
       try {
         await deleteReport(id);
@@ -280,7 +283,7 @@ function bindActions() {
         if (subtitle) subtitle.textContent = `${allReports.length} total report${allReports.length !== 1 ? 's' : ''}`;
         bindActions();
       } catch (e) {
-        alert('Failed to delete: ' + e.message);
+        toast.error('Failed to delete: ' + e.message);
       }
     })
   );

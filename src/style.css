@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* ================================================================
    SYDENHAM ASC – Design System
    ================================================================ */
@@ -1617,3 +1619,40 @@ tbody td {
 .wl-at       { background: rgba(14, 165, 233, 0.15); color: var(--accent-400); }
 .wl-above    { background: rgba(16, 185, 129, 0.15); color: #34d399; }
 .wl-excellent { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+
+/* --- Form Validation (:user-invalid / :user-valid) --- */
+.form-hint {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.error-msg {
+  display: none;
+  color: var(--rose-400);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+/* Show error styles only after interaction */
+.form-control:user-invalid {
+  border-color: var(--rose-500);
+  background-color: rgba(244, 63, 94, 0.05);
+}
+
+.form-control:user-invalid + .error-msg,
+.form-control:user-invalid ~ .error-msg {
+  display: block;
+}
+
+/* Success state indicator */
+.form-control:user-valid:not(:placeholder-shown) {
+  border-color: var(--emerald-500);
+}
+
+/* Highlight section titles if there are invalid fields within */
+.form-section:has(.form-control:user-invalid) .form-section-title {
+  color: var(--rose-400);
+  border-bottom-color: var(--rose-400);
+}

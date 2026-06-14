@@ -74,14 +74,16 @@ export async function renderTutorForm(params = {}) {
             <div class="form-group">
               <label class="form-label" for="tutor-name">Full Name <span class="required">*</span></label>
               <input type="text" id="tutor-name" name="name" class="form-control"
-                value="${escapeHtml(v.name || '')}" placeholder="e.g. Sarah Johnson" required />
+                value="${escapeHtml(v.name || '')}" placeholder="e.g. Sarah Johnson" required aria-errormessage="tutor-name-error" />
+              <div id="tutor-name-error" class="error-msg"><span aria-hidden="true">❌</span> Please enter the tutor's full name.</div>
             </div>
 
             <div class="form-group mt-2">
               <label class="form-label" for="tutor-email">Email Address <span class="required">*</span></label>
               <input type="email" id="tutor-email" name="email" class="form-control"
                 value="${escapeHtml(v.email || '')}" placeholder="e.g. sarah@email.com"
-                ${isEdit ? 'disabled' : ''} required />
+                ${isEdit ? 'disabled' : ''} required aria-errormessage="tutor-email-error" />
+              <div id="tutor-email-error" class="error-msg"><span aria-hidden="true">❌</span> Please enter a valid email address.</div>
               ${isEdit
                 ? '<span class="form-hint">Email cannot be changed after account creation.</span>'
                 : '<span class="form-hint">A sign-in link will be emailed to them automatically — no password needed.</span>'}
@@ -139,8 +141,10 @@ export function initTutorForm(params = {}) {
     const email = form.email?.value?.trim();
     const role  = form.role?.value || 'tutor';
 
-    if (!name) { showError('Name is required.'); return; }
-    if (!isEdit && !email) { showError('Email is required.'); return; }
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
 
     btnSave.disabled = true;
     btnSave.textContent = isEdit ? 'Saving…' : 'Creating account…';

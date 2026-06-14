@@ -8,6 +8,7 @@ import {
 } from '../../db.js';
 import { navigate } from '../../router.js';
 import { toast } from '../../components/toast.js';
+import { confirmDialog } from '../../components/dialog.js';
 import {
   formatDate, escapeHtml, workingLevelClass, CENTRES
 } from '../../utils.js';
@@ -165,7 +166,8 @@ export function initReportApprove(params = {}) {
   document.getElementById('btn-approve')?.addEventListener('click', async () => {
     const btn = document.getElementById('btn-approve');
     const comments = document.getElementById('manager-comments')?.value.trim() || '';
-    if (!confirm('Approve this report?')) return;
+    const confirmed = await confirmDialog('Approve this report?', { title: 'Approve Report' });
+    if (!confirmed) return;
     btn.disabled = true; btn.textContent = 'Approving…';
     try {
       await approveReport(params.id, comments);

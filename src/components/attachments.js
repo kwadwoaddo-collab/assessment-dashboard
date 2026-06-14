@@ -7,6 +7,7 @@
 
 import { uploadAttachment, deleteAttachment, isImage, formatBytes, ACCEPTED_ATTR, MAX_SIZE_MB } from '../storage.js';
 import { toast } from './toast.js';
+import { confirmDialog } from './dialog.js';
 
 export function renderAttachmentWidget(attachments = [], { editable = false } = {}) {
   const uploadZone = editable ? `
@@ -177,7 +178,8 @@ function bindDeleteButtons(attachments, reportId, onChange) {
       const i = parseInt(btn.dataset.deleteAttach, 10);
       const att = attachments[i];
       if (!att) return;
-      if (!confirm(`Remove "${att.name}"?`)) return;
+      const confirmed = await confirmDialog(`Remove "${att.name}"?`, { title: 'Remove Attachment', danger: true });
+      if (!confirmed) return;
       btn.disabled = true;
       try {
         if (att.path) await deleteAttachment(att.path);

@@ -17,6 +17,7 @@ import {
 } from '../../utils.js';
 import { isAdmin, getState } from '../../store.js';
 import { renderAttachmentWidget, initAttachmentWidget } from '../../components/attachments.js';
+import { confirmDialog } from '../../components/dialog.js';
 
 export async function renderReportDetail(params = {}) {
   if (!params.id) return `<div class="empty-state"><h3>No report selected</h3></div>`;
@@ -273,7 +274,8 @@ export function initReportDetail(params = {}) {
   }
 
   document.getElementById('btn-submit')?.addEventListener('click', async () => {
-    if (!confirm('Submit this report for manager approval?')) return;
+    const confirmed = await confirmDialog('Submit this report for manager approval?', { title: 'Submit Report' });
+    if (!confirmed) return;
     const btn = document.getElementById('btn-submit');
     btn.disabled = true; btn.textContent = 'Submitting…';
     try {
@@ -308,7 +310,8 @@ export function initReportDetail(params = {}) {
   document.getElementById('btn-send')?.addEventListener('click', async () => {
     const report = await getReportById(params.id);
     const student = await getStudentById(report.studentId);
-    if (!confirm(`Send this report to ${student?.parentName || 'parent'} at ${student?.parentEmail}?`)) return;
+    const confirmed = await confirmDialog(`Send this report to ${student?.parentName || 'parent'} at ${student?.parentEmail}?`, { title: 'Send Report' });
+    if (!confirmed) return;
 
     const btn = document.getElementById('btn-send');
     btn.disabled = true; btn.textContent = 'Sending…';
@@ -346,7 +349,8 @@ export function initReportDetail(params = {}) {
   });
 
   document.getElementById('btn-delete')?.addEventListener('click', async () => {
-    if (!confirm('Delete this draft report? This cannot be undone.')) return;
+    const confirmed = await confirmDialog('Delete this draft report? This cannot be undone.', { title: 'Delete Report', danger: true });
+    if (!confirmed) return;
     try {
       await deleteReport(params.id);
       toast.success('Report deleted');

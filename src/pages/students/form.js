@@ -50,20 +50,24 @@ export async function renderStudentForm(params = {}) {
               <div class="form-group">
                 <label class="form-label" for="studentName">Student Name <span class="required">*</span></label>
                 <input type="text" id="studentName" name="studentName" class="form-control"
-                  value="${escapeHtml(v.studentName || '')}" placeholder="e.g. John Smith" required />
+                  value="${escapeHtml(v.studentName || '')}" placeholder="e.g. John Smith" required aria-errormessage="studentName-error" />
+                <div id="studentName-error" class="error-msg"><span aria-hidden="true">❌</span> Please enter the student's name.</div>
               </div>
               <div class="form-group">
                 <label class="form-label" for="parentName">Parent / Guardian Name <span class="required">*</span></label>
                 <input type="text" id="parentName" name="parentName" class="form-control"
-                  value="${escapeHtml(v.parentName || '')}" placeholder="e.g. Jane Smith" required />
+                  value="${escapeHtml(v.parentName || '')}" placeholder="e.g. Jane Smith" required aria-errormessage="parentName-error" />
+                <div id="parentName-error" class="error-msg"><span aria-hidden="true">❌</span> Please enter the parent or guardian's name.</div>
               </div>
             </div>
 
             <div class="form-group mt-2">
               <label class="form-label" for="parentEmail">Parent Email Address <span class="required">*</span></label>
+              <span id="parentEmail-hint" class="form-hint">Reports will be sent to this email address.</span>
               <input type="email" id="parentEmail" name="parentEmail" class="form-control"
-                value="${escapeHtml(v.parentEmail || '')}" placeholder="e.g. jane@example.com" required />
-              <span class="form-hint">Reports will be sent to this email address.</span>
+                value="${escapeHtml(v.parentEmail || '')}" placeholder="e.g. jane@example.com" required 
+                aria-describedby="parentEmail-hint" aria-errormessage="parentEmail-error" />
+              <div id="parentEmail-error" class="error-msg"><span aria-hidden="true">❌</span> Please enter a valid email address.</div>
             </div>
           </div>
 
@@ -168,11 +172,9 @@ export function initStudentForm(params = {}) {
       tutorAssigned: form.tutorAssigned.value || null,
     };
 
-    if (!data.studentName) { showError('Student name is required.'); return; }
-    if (!data.parentName)  { showError('Parent name is required.'); return; }
-    if (!data.parentEmail) { showError('Parent email is required.'); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.parentEmail)) {
-      showError('Please enter a valid parent email address.'); return;
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
     }
 
     btnSave.disabled = true;

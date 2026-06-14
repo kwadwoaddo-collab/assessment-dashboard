@@ -40,24 +40,33 @@ export function render() {
 
   if (handler) {
     const html = handler();
+    const renderHtml = (h) => {
+      const updateDom = () => {
+        content.innerHTML = h;
+        dispatchEvent(new CustomEvent('page-rendered', { detail: { page } }));
+      };
+      
+      if (document.startViewTransition) {
+        document.startViewTransition(updateDom);
+      } else {
+        updateDom();
+        content.classList.add('page-enter');
+        setTimeout(() => content.classList.remove('page-enter'), 300);
+      }
+    };
+
     if (html instanceof Promise) {
       content.innerHTML = `<div class="empty-state"><p>Loading...</p></div>`;
       html.then(h => {
         if (typeof h === 'string') {
-          content.innerHTML = h;
-          content.classList.add('page-enter');
-          setTimeout(() => content.classList.remove('page-enter'), 300);
-          dispatchEvent(new CustomEvent('page-rendered', { detail: { page } }));
+          renderHtml(h);
         }
       }).catch(e => {
         console.error(e);
         content.innerHTML = `<div class="empty-state"><h3>Error</h3><p>${e.message}</p></div>`;
       });
     } else if (typeof html === 'string') {
-      content.innerHTML = html;
-      content.classList.add('page-enter');
-      setTimeout(() => content.classList.remove('page-enter'), 300);
-      dispatchEvent(new CustomEvent('page-rendered', { detail: { page } }));
+      renderHtml(html);
     }
   } else {
     content.innerHTML = `

@@ -7,6 +7,7 @@ import { navigate } from '../../router.js';
 import { formatDate, escapeHtml, initials } from '../../utils.js';
 import { toast } from '../../components/toast.js';
 import { debounce } from '../../utils.js';
+import { confirmDialog } from '../../components/dialog.js';
 
 let allTutors = [];
 
@@ -130,7 +131,8 @@ function bindActions() {
 
   document.querySelectorAll('[data-tutor-deactivate]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm('Deactivate this tutor?')) return;
+      const confirmed = await confirmDialog('Deactivate this tutor?', { title: 'Deactivate Tutor', danger: true });
+      if (!confirmed) return;
       try {
         await updateUser(btn.dataset.tutorDeactivate, { active: false });
         toast.success('Tutor deactivated');

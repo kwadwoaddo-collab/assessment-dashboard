@@ -167,6 +167,8 @@ export function initStudentsList() {
   bindTableActions();
 }
 
+import { confirmDialog } from '../../components/dialog.js';
+
 function bindTableActions() {
   document.querySelectorAll('[data-student-view]').forEach(btn => {
     btn.addEventListener('click', () => navigate('student-detail', { id: btn.dataset.studentView }));
@@ -182,7 +184,8 @@ function bindTableActions() {
 
   document.querySelectorAll('[data-student-deactivate]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm('Deactivate this student? They will no longer appear in active lists.')) return;
+      const confirmed = await confirmDialog('Deactivate this student? They will no longer appear in active lists.', { title: 'Deactivate Student', danger: true });
+      if (!confirmed) return;
       try {
         await deactivateStudent(btn.dataset.studentDeactivate);
         toast.success('Student deactivated');

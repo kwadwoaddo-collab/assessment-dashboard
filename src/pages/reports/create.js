@@ -121,22 +121,24 @@ function renderStep(reportId) {
       </div>
 
       <div class="card">
-        ${renderStepIndicator()}
-        <div id="step-content">
-          ${content}
-        </div>
-        <div class="divider"></div>
-        <div style="display:flex;justify-content:space-between;gap:12px;margin-top:4px;">
-          <button class="btn btn-secondary" id="btn-prev" style="display: ${currentStep > 1 ? 'flex' : 'none'};">← Back</button>
-          <div style="display:flex;gap:10px;">
-            <button class="btn btn-secondary" id="btn-save-draft">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg>
-              ${saveLabel}
-            </button>
-            <button class="btn btn-primary" id="btn-next" style="display: ${currentStep < 4 ? 'flex' : 'none'};">Next →</button>
-            ${step4Action}
+        <form id="create-report-form" novalidate onsubmit="event.preventDefault();">
+          ${renderStepIndicator()}
+          <div id="step-content">
+            ${content}
           </div>
-        </div>
+          <div class="divider"></div>
+          <div style="display:flex;justify-content:space-between;gap:12px;margin-top:4px;">
+            <button type="button" class="btn btn-secondary" id="btn-prev" style="display: ${currentStep > 1 ? 'flex' : 'none'};">← Back</button>
+            <div style="display:flex;gap:10px;">
+              <button type="button" class="btn btn-secondary" id="btn-save-draft">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg>
+                ${saveLabel}
+              </button>
+              <button type="button" class="btn btn-primary" id="btn-next" style="display: ${currentStep < 4 ? 'flex' : 'none'};">Next →</button>
+              ${step4Action.replace('<button ', '<button type="button" ')}
+            </div>
+          </div>
+        </form>
       </div>
     </div>
   `;
@@ -151,13 +153,15 @@ function renderStep1() {
       </div>
       <div class="form-group">
         <label class="form-label" for="step1-student">Student <span class="required">*</span></label>
-        <select id="step1-student" class="form-control">
+        <select id="step1-student" class="form-control" required aria-errormessage="step1-student-error">
           <option value="">— Select a student —</option>
           ${students.map(s => `
             <option value="${s.id}" ${formData.studentId === s.id ? 'selected' : ''}>
-              ${escapeHtml(s.studentName)}${s.yearGroup ? ' – ' + escapeHtml(s.yearGroup) : ''}
-            </option>`).join('')}
+              ${escapeHtml(s.studentName)} ${s.yearGroup ? `(${escapeHtml(s.yearGroup)})` : ''}
+            </option>
+          `).join('')}
         </select>
+        <div id="step1-student-error" class="error-msg"><span aria-hidden="true">❌</span> Please select a student.</div>
       </div>
       ${selectedStudent ? `
       <div class="info-block mt-2">
@@ -180,24 +184,27 @@ function renderStep2() {
       <div class="form-row">
         <div class="form-group">
           <label class="form-label" for="assessmentDate">Assessment Date <span class="required">*</span></label>
-          <input type="date" id="assessmentDate" class="form-control"
+          <input type="date" id="assessmentDate" class="form-control" required aria-errormessage="assessmentDate-error"
             value="${formData.assessmentDate ? formatDateForInput(formData.assessmentDate) : new Date().toISOString().split('T')[0]}" />
+          <div id="assessmentDate-error" class="error-msg"><span aria-hidden="true">❌</span> Assessment date is required.</div>
         </div>
         <div class="form-group">
           <label class="form-label" for="subject">Subject <span class="required">*</span></label>
-          <select id="subject" class="form-control">
+          <select id="subject" class="form-control" required aria-errormessage="subject-error">
             <option value="">— Select subject —</option>
             ${SUBJECTS.map(s => `<option value="${s}" ${formData.subject === s ? 'selected' : ''}>${s}</option>`).join('')}
           </select>
+          <div id="subject-error" class="error-msg"><span aria-hidden="true">❌</span> Please select a subject.</div>
         </div>
       </div>
 
       <div class="form-group mt-2">
         <label class="form-label" for="assessmentType">Assessment Type <span class="required">*</span></label>
-        <select id="assessmentType" class="form-control">
+        <select id="assessmentType" class="form-control" required aria-errormessage="assessmentType-error">
           <option value="">— Select type —</option>
           ${ASSESSMENT_TYPES.map(t => `<option value="${t}" ${formData.assessmentType === t ? 'selected' : ''}>${t}</option>`).join('')}
         </select>
+        <div id="assessmentType-error" class="error-msg"><span aria-hidden="true">❌</span> Please select an assessment type.</div>
       </div>
     </div>
 
@@ -210,10 +217,11 @@ function renderStep2() {
       <div class="form-row">
         <div class="form-group">
           <label class="form-label" for="workingLevel">Current Working Level <span class="required">*</span></label>
-          <select id="workingLevel" class="form-control">
+          <select id="workingLevel" class="form-control" required aria-errormessage="workingLevel-error">
             <option value="">— Select level —</option>
             ${WORKING_LEVELS.map(l => `<option value="${l}" ${formData.workingLevel === l ? 'selected' : ''}>${l}</option>`).join('')}
           </select>
+          <div id="workingLevel-error" class="error-msg"><span aria-hidden="true">❌</span> Please select the working level.</div>
         </div>
         <div class="form-group">
           <label class="form-label" for="assessmentScore">Assessment Score (%)</label>
@@ -226,26 +234,29 @@ function renderStep2() {
       <div class="form-row mt-2">
         <div class="form-group">
           <label class="form-label" for="homeworkCompletion">Homework Completion <span class="required">*</span></label>
-          <select id="homeworkCompletion" class="form-control">
+          <select id="homeworkCompletion" class="form-control" required aria-errormessage="homeworkCompletion-error">
             <option value="">— Select —</option>
             ${HOMEWORK_OPTIONS.map(o => `<option value="${o}" ${formData.homeworkCompletion === o ? 'selected' : ''}>${o}</option>`).join('')}
           </select>
+          <div id="homeworkCompletion-error" class="error-msg"><span aria-hidden="true">❌</span> Selection required.</div>
         </div>
         <div class="form-group">
           <label class="form-label" for="attendance">Attendance <span class="required">*</span></label>
-          <select id="attendance" class="form-control">
+          <select id="attendance" class="form-control" required aria-errormessage="attendance-error">
             <option value="">— Select —</option>
             ${ATTENDANCE_OPTIONS.map(o => `<option value="${o}" ${formData.attendance === o ? 'selected' : ''}>${o}</option>`).join('')}
           </select>
+          <div id="attendance-error" class="error-msg"><span aria-hidden="true">❌</span> Selection required.</div>
         </div>
       </div>
 
       <div class="form-group mt-2">
         <label class="form-label" for="behaviourEngagement">Behaviour & Engagement <span class="required">*</span></label>
-        <select id="behaviourEngagement" class="form-control">
+        <select id="behaviourEngagement" class="form-control" required aria-errormessage="behaviourEngagement-error">
           <option value="">— Select —</option>
           ${BEHAVIOUR_OPTIONS.map(o => `<option value="${o}" ${formData.behaviourEngagement === o ? 'selected' : ''}>${o}</option>`).join('')}
         </select>
+        <div id="behaviourEngagement-error" class="error-msg"><span aria-hidden="true">❌</span> Selection required.</div>
       </div>
     </div>`;
 }
@@ -260,14 +271,16 @@ function renderStep3() {
 
       <div class="form-group">
         <label class="form-label" for="strengths">Strengths <span class="required">*</span></label>
-        <textarea id="strengths" class="form-control" rows="4"
+        <textarea id="strengths" class="form-control" rows="4" required aria-errormessage="strengths-error"
           placeholder="What did the student do particularly well in?">${escapeHtml(formData.strengths || '')}</textarea>
+        <div id="strengths-error" class="error-msg"><span aria-hidden="true">❌</span> Please detail the student's strengths.</div>
       </div>
 
       <div class="form-group mt-2">
         <label class="form-label" for="areasForImprovement">Areas for Improvement <span class="required">*</span></label>
-        <textarea id="areasForImprovement" class="form-control" rows="4"
+        <textarea id="areasForImprovement" class="form-control" rows="4" required aria-errormessage="areasForImprovement-error"
           placeholder="What areas require further development?">${escapeHtml(formData.areasForImprovement || '')}</textarea>
+        <div id="areasForImprovement-error" class="error-msg"><span aria-hidden="true">❌</span> Please specify areas for improvement.</div>
       </div>
 
       <div class="form-group mt-2">
@@ -369,14 +382,23 @@ function renderStep4(adminEdit = false) {
 }
 
 function collectStep1() {
+  const form = document.getElementById('create-report-form');
+  if (form && !form.checkValidity()) {
+    form.reportValidity();
+    return false;
+  }
   const sel = document.getElementById('step1-student');
-  if (!sel?.value) { toast.error('Please select a student.'); return false; }
   formData.studentId = sel.value;
   selectedStudent = students.find(s => s.id === sel.value) || null;
   return true;
 }
 
 function collectStep2() {
+  const form = document.getElementById('create-report-form');
+  if (form && !form.checkValidity()) {
+    form.reportValidity();
+    return false;
+  }
   const date = document.getElementById('assessmentDate')?.value;
   const subject = document.getElementById('subject')?.value;
   const type = document.getElementById('assessmentType')?.value;
@@ -386,9 +408,6 @@ function collectStep2() {
   const att = document.getElementById('attendance')?.value;
   const beh = document.getElementById('behaviourEngagement')?.value;
 
-  if (!date || !subject || !type || !level || !hw || !att || !beh) {
-    toast.error('Please fill in all required fields.'); return false;
-  }
   Object.assign(formData, { assessmentDate: date, subject, assessmentType: type, workingLevel: level,
     assessmentScore: score !== '' ? Number(score) : null,
     homeworkCompletion: hw, attendance: att, behaviourEngagement: beh });
@@ -396,14 +415,16 @@ function collectStep2() {
 }
 
 function collectStep3() {
+  const form = document.getElementById('create-report-form');
+  if (form && !form.checkValidity()) {
+    form.reportValidity();
+    return false;
+  }
   const strengths = document.getElementById('strengths')?.value.trim();
   const areas = document.getElementById('areasForImprovement')?.value.trim();
   const topics = document.getElementById('topicsCovered')?.value.trim();
   const recs = document.getElementById('recommendations')?.value.trim();
   const extra = document.getElementById('additionalComments')?.value.trim();
-  if (!strengths || !areas) {
-    toast.error('Please fill in Strengths and Areas for Improvement.'); return false;
-  }
   Object.assign(formData, { strengths, areasForImprovement: areas, topicsCovered: topics,
     tutorFeedback: null, recommendations: recs, additionalComments: extra });
 

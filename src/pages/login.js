@@ -62,7 +62,9 @@ export function renderLogin() {
                 placeholder="you@sydenhamasc.co.uk"
                 autocomplete="username"
                 required
+                aria-errormessage="login-email-error"
               />
+              <div id="login-email-error" class="error-msg"><span aria-hidden="true">❌</span> Please enter a valid email.</div>
             </div>
 
             <div class="form-group">
@@ -74,7 +76,9 @@ export function renderLogin() {
                 placeholder="••••••••"
                 autocomplete="current-password"
                 required
+                aria-errormessage="login-password-error"
               />
+              <div id="login-password-error" class="error-msg"><span aria-hidden="true">❌</span> Password is required.</div>
             </div>
 
             <div id="login-error" class="form-error" style="display:none;padding:10px;background:rgba(244,63,94,0.1);border-radius:8px;border:1px solid rgba(244,63,94,0.3);"></div>
@@ -98,7 +102,9 @@ export function renderLogin() {
                 placeholder="you@sydenhamasc.co.uk"
                 autocomplete="email"
                 required
+                aria-errormessage="magic-email-error"
               />
+              <div id="magic-email-error" class="error-msg"><span aria-hidden="true">❌</span> Please enter a valid email.</div>
             </div>
 
             <p class="text-muted" style="font-size:0.8rem;margin-bottom:16px;line-height:1.5;">
@@ -241,8 +247,8 @@ export function initLogin() {
     const email    = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
 
-    if (!email || !password) {
-      showError(errorBox, 'Please enter your email and password.');
+    if (!form.checkValidity()) {
+      form.reportValidity();
       return;
     }
 
@@ -281,8 +287,8 @@ export function initLogin() {
     e.preventDefault();
     const email = document.getElementById('magic-email').value.trim();
 
-    if (!email) {
-      showError(magicError, 'Please enter your email address.');
+    if (!magicForm.checkValidity()) {
+      magicForm.reportValidity();
       return;
     }
 

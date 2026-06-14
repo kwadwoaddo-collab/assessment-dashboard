@@ -208,4 +208,31 @@ async function boot() {
   });
 }
 
-boot().catch(console.error);
+// Sync aria-invalid with the CSS :user-invalid state
+const syncAria = (el) => {
+  if (el && el.matches) {
+    el.setAttribute?.('aria-invalid', el.matches(':user-invalid') ? 'true' : 'false');
+  }
+};
+document.addEventListener('blur', (e) => syncAria(e.target), true);
+document.addEventListener('input', (e) => {
+  if (e.target && e.target.hasAttribute && e.target.hasAttribute('aria-invalid')) {
+    syncAria(e.target);
+  }
+});
+
+boot().catch((err) => {
+  console.error('Fatal app error:', err);
+  document.getElementById('app').innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#0a0f1e;color:#f1f5f9;text-align:center;padding:20px;">
+      <svg style="width:64px;height:64px;color:#f43f5e;margin-bottom:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+      <h2 style="margin-bottom:8px;">Failed to load application</h2>
+      <p style="color:#94a3b8;max-width:400px;">${err.message || 'An unexpected error occurred. Please refresh the page or try again later.'}</p>
+      <button onclick="window.location.reload()" style="margin-top:24px;padding:10px 20px;background:#14b8a6;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;">Reload Page</button>
+    </div>
+  `;
+});
