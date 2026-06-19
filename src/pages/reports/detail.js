@@ -4,7 +4,7 @@
 
 import {
   getReportById, getStudentById, getUserById,
-  deleteReport, submitReport
+  deleteReport, submitReport, updateStudent
 } from '../../db.js';
 import { navigate } from '../../router.js';
 import { toast } from '../../components/toast.js';
@@ -309,7 +309,33 @@ export function initReportDetail(params = {}) {
 
   document.getElementById('btn-send')?.addEventListener('click', async () => {
     const report = await getReportById(params.id);
-    const student = await getStudentById(report.studentId);
+    let student = await getStudentById(report.studentId);
+
+    if (!student?.parentEmail) {
+      const emailInput = window.prompt(`Missing Parent Email for ${student.studentName}.\nPlease enter the Parent's Email Address to send the report:`);
+      if (!emailInput || !emailInput.trim()) {
+        toast.error('Parent email is required to send the report.');
+        return;
+      }
+      let nameInput = student?.parentName;
+      if (!nameInput) {
+        nameInput = window.prompt(`(Optional) Enter the Parent/Guardian's Name for ${student.studentName}:`, 'Parent/Guardian');
+      }
+      
+      try {
+        await updateStudent(student.id, { 
+          parentEmail: emailInput.trim(), 
+          parentName: (nameInput || 'Parent/Guardian').trim() 
+        });
+        toast.success('Student record updated with parent details.');
+        student.parentEmail = emailInput.trim();
+        student.parentName = (nameInput || 'Parent/Guardian').trim();
+      } catch (err) {
+        toast.error('Failed to update student record: ' + err.message);
+        return;
+      }
+    }
+
     const confirmed = await confirmDialog(`Send this report to ${student?.parentName || 'parent'} at ${student?.parentEmail}?`, { title: 'Send Report' });
     if (!confirmed) return;
 
