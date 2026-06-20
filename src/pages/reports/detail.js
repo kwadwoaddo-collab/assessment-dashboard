@@ -4,7 +4,7 @@
 
 import {
   getReportById, getStudentById, getUserById,
-  deleteReport, submitReport, updateStudent
+  deleteReport, submitReport, updateStudent, updateReport
 } from '../../db.js';
 import { navigate } from '../../router.js';
 import { toast } from '../../components/toast.js';
@@ -264,8 +264,6 @@ export function initReportDetail(params = {}) {
           editable: isAdmin() && report.status !== 'sent',
           reportId: params.id,
           onChange: async (updated) => {
-            await markReportSent; // no-op — just need updateReport
-            const { updateReport } = await import('../../db.js');
             await updateReport(params.id, { attachments: updated });
           },
         });

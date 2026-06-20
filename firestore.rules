@@ -1,7 +1,7 @@
 rules_version = '2';
 
 service cloud.firestore {
-  match /databases/sydenham-asc/documents {
+  match /databases/{database}/documents {
 
     // ── Helper: is the request authenticated? ────────────────────
     function isAuth() {
@@ -10,8 +10,8 @@ service cloud.firestore {
 
     // ── Safe role lookup (returns '' if doc doesn't exist) ───────
     function userRole() {
-      return isAuth() && exists(/databases/sydenham-asc/documents/users/$(request.auth.uid))
-        ? get(/databases/sydenham-asc/documents/users/$(request.auth.uid)).data.role
+      return isAuth() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
         : '';
     }
 
@@ -55,6 +55,12 @@ service cloud.firestore {
         isManager()
       );
       allow delete: if (isAdmin() || isManager()) && resource.data.status == 'draft';
+    }
+
+    // ── Cash Receipts Collection ─────────────────────────────────
+    match /cash_receipts/{receiptId} {
+      allow read, create, update: if isAuth();
+      allow delete: if false;
     }
   }
 }
