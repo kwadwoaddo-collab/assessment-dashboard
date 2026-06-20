@@ -17,7 +17,7 @@ import {
 } from '../../utils.js';
 import { isAdmin, getState } from '../../store.js';
 import { renderAttachmentWidget, initAttachmentWidget } from '../../components/attachments.js';
-import { confirmDialog } from '../../components/dialog.js';
+import { confirmDialog, promptDialog } from '../../components/dialog.js';
 
 export async function renderReportDetail(params = {}) {
   if (!params.id) return `<div class="empty-state"><h3>No report selected</h3></div>`;
@@ -312,14 +312,22 @@ export function initReportDetail(params = {}) {
     let student = await getStudentById(report.studentId);
 
     if (!student?.parentEmail) {
-      const emailInput = window.prompt(`Missing Parent Email for ${student.studentName}.\nPlease enter the Parent's Email Address to send the report:`);
+      const emailInput = await promptDialog(
+        `Please enter the Parent's Email Address to send the report:`, 
+        '', 
+        { title: `Missing Parent Email for ${student.studentName}`, type: 'email' }
+      );
       if (!emailInput || !emailInput.trim()) {
         toast.error('Parent email is required to send the report.');
         return;
       }
       let nameInput = student?.parentName;
       if (!nameInput) {
-        nameInput = window.prompt(`(Optional) Enter the Parent/Guardian's Name for ${student.studentName}:`, 'Parent/Guardian');
+        nameInput = await promptDialog(
+          `(Optional) Enter the Parent/Guardian's Name for ${student.studentName}:`, 
+          'Parent/Guardian', 
+          { title: 'Parent/Guardian Name' }
+        );
       }
       
       try {

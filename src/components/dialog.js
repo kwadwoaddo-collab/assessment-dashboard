@@ -152,3 +152,64 @@ export function confirmDialog(message, options = {}) {
     dialog.showModal();
   });
 }
+
+export function promptDialog(message, defaultValue = '', options = {}) {
+  createDialogStyles();
+
+  return new Promise((resolve) => {
+    const dialog = document.createElement('dialog');
+    dialog.className = 'modern-dialog';
+    
+    const title = options.title || 'Input Required';
+    const confirmText = options.confirmText || 'OK';
+    const cancelText = options.cancelText || 'Cancel';
+    const type = options.type || 'text';
+    const escapedValue = (defaultValue || '').replace(/"/g, '&quot;');
+
+    dialog.innerHTML = `
+      <div class="modern-dialog-content">
+        <div class="modern-dialog-title">\${title}</div>
+        <div class="modern-dialog-desc">\${message}</div>
+        <div style="margin-bottom: 24px;">
+          <input type="\${type}" id="dialog-input" class="form-control" value="\${escapedValue}" style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid var(--border-color, rgba(148, 163, 184, 0.5)); border-radius: 8px; background: rgba(0,0,0,0.1); color: inherit;" autocomplete="off"/>
+        </div>
+        <div class="modern-dialog-actions">
+          <button class="btn btn-secondary" id="dialog-cancel">\${cancelText}</button>
+          <button class="btn btn-primary" id="dialog-confirm">\${confirmText}</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(dialog);
+
+    const btnCancel = dialog.querySelector('#dialog-cancel');
+    const btnConfirm = dialog.querySelector('#dialog-confirm');
+    const input = dialog.querySelector('#dialog-input');
+
+    const closeDialog = (result) => {
+      dialog.close();
+      dialog.addEventListener('transitionend', (e) => {
+        if (e.propertyName === 'opacity' || e.propertyName === 'transform') {
+          dialog.remove();
+        }
+      }, { once: true });
+      setTimeout(() => dialog.remove(), 400); 
+      resolve(result);
+    };
+
+    btnCancel.addEventListener('click', () => closeDialog(null));
+    btnConfirm.addEventListener('click', () => closeDialog(input.value));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') closeDialog(input.value);
+    });
+
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) closeDialog(null);
+    });
+
+    dialog.showModal();
+    // Focus the input and select text if there is a default value
+    input.focus();
+    if (defaultValue) input.select();
+  });
+}
