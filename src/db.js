@@ -5,7 +5,7 @@
 import {
   collection, doc, getDoc, getDocs, addDoc, setDoc, updateDoc,
   deleteDoc, query, where, orderBy, limit, serverTimestamp,
-  Timestamp, writeBatch
+  Timestamp, writeBatch, getCountFromServer, getAggregateFromServer, average
 } from 'firebase/firestore';
 import { db } from './firebase.js';
 import { getState } from './store.js';
@@ -265,63 +265,59 @@ export async function findUserByEmail(email) {
  * - Tutors: pass their uid → see only their own reports & students.
  */
 export async function getDashboardStats(tutorId = null) {
-  // If tutorId is given, fetch only that tutor's reports
-  const reportsQuery = tutorId
-    ? query(collection(db, 'reports'), where('createdBy', '==', tutorId), orderBy('createdAt', 'desc'))
-    : query(collection(db, 'reports'), orderBy('createdAt', 'desc'));
+  // Base queries
+  const studentsQuery = query(collection(db, 'students'), where('active', '==', true));
+  const reportsBase = tutorId
+    ? query(collection(db, 'reports'), where('createdBy', '==', tutorId))
+    : collection(db, 'reports');
 
-  const [studentsSnap, reportsSnap] = await Promise.all([
-    getDocs(query(collection(db, 'students'), where('active', '==', true))),
-    getDocs(reportsQuery),
+  // Instead of getDocs() which reads every document, we use server-side aggregation
+  const [
+    studentsCount,
+    draftCount,
+    submittedCount,
+    approvedCount,
+    sentCount,
+    scoreAggregate
+  ] = await Promise.all([
+    getCountFromServer(studentsQuery),
+    getCountFromServer(query(reportsBase, where('status', '==', 'draft'))),
+    getCountFromServer(query(reportsBase, where('status', '==', 'submitted'))),
+    getCountFromServer(query(reportsBase, where('status', '==', 'approved'))),
+    getCountFromServer(query(reportsBase, where('status', '==', 'sent'))),
+    // getAggregateFromServer can average the score field natively
+    getAggregateFromServer(reportsBase, { avgScore: average('assessmentScore') })
   ]);
 
-  // Only admins/managers can list all users — fail silently for tutors
   let tutorCount = null;
   try {
-    const tutorsSnap = await getDocs(
+    const tutorsCountSnap = await getCountFromServer(
       query(collection(db, 'users'), where('role', '==', 'tutor'), where('active', '==', true))
     );
-    tutorCount = tutorsSnap.size;
+    tutorCount = tutorsCountSnap.data().count;
   } catch (_) {
     // Tutor role — no permission to list all users, that's fine
   }
 
-  const allReports = reportsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  // Calculate "This Month" dynamically.
+  // Note: For 'createdThisMonth' and 'sentThisMonth', we can use a range query using the 1st of the current month.
   const now = new Date();
-
-  // For tutors: count only students they've actually written reports for
-  const totalStudents = tutorId
-    ? new Set(allReports.map(r => r.studentId).filter(Boolean)).size
-    : studentsSnap.size;
-
-  const thisMonth = allReports.filter(r => {
-    const d = r.createdAt?.toDate ? r.createdAt.toDate() : new Date(r.createdAt);
-    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-  });
-
-  const sentThisMonth = allReports.filter(r => {
-    if (r.status !== 'sent' || !r.sentAt) return false;
-    const d = r.sentAt?.toDate ? r.sentAt.toDate() : new Date(r.sentAt);
-    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-  });
-
-  const scores = allReports
-    .filter(r => r.assessmentScore != null && !isNaN(r.assessmentScore))
-    .map(r => Number(r.assessmentScore));
-
-  const avgScore = scores.length > 0
-    ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
-    : null;
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  
+  const [createdThisMonthCount, sentThisMonthCount] = await Promise.all([
+    getCountFromServer(query(reportsBase, where('createdAt', '>=', startOfMonth))),
+    getCountFromServer(query(reportsBase, where('status', '==', 'sent'), where('sentAt', '>=', startOfMonth)))
+  ]);
 
   return {
-    totalStudents,
-    totalTutors:      tutorCount,
-    draft:            allReports.filter(r => r.status === 'draft').length,
-    submitted:        allReports.filter(r => r.status === 'submitted').length,
-    approved:         allReports.filter(r => r.status === 'approved').length,
-    sent:             allReports.filter(r => r.status === 'sent').length,
-    createdThisMonth: thisMonth.length,
-    sentThisMonth:    sentThisMonth.length,
-    avgScore,
+    totalStudents:      studentsCount.data().count,
+    totalTutors:        tutorCount,
+    draft:              draftCount.data().count,
+    submitted:          submittedCount.data().count,
+    approved:           approvedCount.data().count,
+    sent:               sentCount.data().count,
+    createdThisMonth:   createdThisMonthCount.data().count,
+    sentThisMonth:      sentThisMonthCount.data().count,
+    avgScore:           Math.round(scoreAggregate.data().avgScore || 0) || null,
   };
 }
