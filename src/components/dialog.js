@@ -213,3 +213,49 @@ export function promptDialog(message, defaultValue = '', options = {}) {
     if (defaultValue) input.select();
   });
 }
+
+export function alertDialog(message, options = {}) {
+  createDialogStyles();
+
+  return new Promise((resolve) => {
+    const dialog = document.createElement('dialog');
+    dialog.className = 'modern-dialog';
+    
+    const title = options.title || 'Alert';
+    const confirmText = options.confirmText || 'OK';
+
+    dialog.innerHTML = `
+      <div class="modern-dialog-content">
+        <div class="modern-dialog-title">${title}</div>
+        <div class="modern-dialog-desc">${message}</div>
+        <div class="modern-dialog-actions">
+          <button class="btn btn-primary" id="dialog-confirm">${confirmText}</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(dialog);
+
+    const btnConfirm = dialog.querySelector('#dialog-confirm');
+
+    const closeDialog = () => {
+      dialog.close();
+      dialog.addEventListener('transitionend', (e) => {
+        if (e.propertyName === 'opacity' || e.propertyName === 'transform') {
+          dialog.remove();
+        }
+      }, { once: true });
+      setTimeout(() => dialog.remove(), 400); 
+      resolve();
+    };
+
+    btnConfirm.addEventListener('click', closeDialog);
+    
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) closeDialog();
+    });
+
+    dialog.showModal();
+    btnConfirm.focus();
+  });
+}
