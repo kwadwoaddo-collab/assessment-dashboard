@@ -18,6 +18,7 @@ import {
 import { auth, db } from './firebase.js';
 import { setState } from './store.js';
 import { generateId } from './utils.js';
+import { promptDialog } from './components/dialog.js';
 
 // Listen to auth state changes and load user profile from Firestore
 export function initAuth(onReady) {
@@ -125,7 +126,6 @@ export async function completeMagicLinkSignIn(url) {
   if (!email) {
     // Fallback: ask the user (handles the case where the link was opened on a
     // different device / browser than where the request was made).
-    const { promptDialog } = await import('./components/dialog.js');
     email = await promptDialog(
       'Security Check',
       'Please enter the email address you used to request the sign-in link:'

@@ -301,8 +301,8 @@ export async function getDashboardStats(tutorId = null) {
 
   // Calculate "This Month" dynamically.
   // Note: For 'createdThisMonth' and 'sentThisMonth', we can use a range query using the 1st of the current month.
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const currentDate = new Date();
+  const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   
   const [createdThisMonthCount, sentThisMonthCount] = await Promise.all([
     getCountFromServer(query(reportsBase, where('createdAt', '>=', startOfMonth))),

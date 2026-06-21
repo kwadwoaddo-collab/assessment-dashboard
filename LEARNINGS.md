@@ -11,3 +11,6 @@
 
 ## Recent Optimizations
 - **Data Fetching**: Identified client-side date filtering and full collection fetches as scalability risks. Addressed these by proposing server-side aggregations (`getCountFromServer`, `getAggregateFromServer`) to avoid loading all documents into memory.
+- **Code Smells & Bug Prevention**: Fixed variable shadowing (e.g., local `Date` objects hiding global `now()` functions) to ensure reliable helper behavior.
+- **DRY Refactoring**: Centralized duplicated logic (e.g., date parsing in `utils.js` into a shared `parseDate` helper) to improve maintainability.
+- **Vite Build Optimizations**: Resolved CSS `@import` ordering issues and converted ineffective dynamic imports to static imports to fix Vite compiler warnings during build.

@@ -2,10 +2,15 @@
 // Utilities – shared helpers
 // ================================================================
 
+export function parseDate(dateStr) {
+  if (!dateStr) return null;
+  return dateStr.toDate ? dateStr.toDate() : new Date(dateStr);
+}
+
 export function formatDate(dateStr) {
   if (!dateStr) return '—';
   try {
-    const d = dateStr.toDate ? dateStr.toDate() : new Date(dateStr);
+    const d = parseDate(dateStr);
     return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   } catch { return '—'; }
 }
@@ -13,7 +18,7 @@ export function formatDate(dateStr) {
 export function formatDateTime(dateStr) {
   if (!dateStr) return '—';
   try {
-    const d = dateStr.toDate ? dateStr.toDate() : new Date(dateStr);
+    const d = parseDate(dateStr);
     return d.toLocaleDateString('en-GB', {
       day: '2-digit', month: 'short', year: 'numeric',
       hour: '2-digit', minute: '2-digit'
@@ -24,7 +29,7 @@ export function formatDateTime(dateStr) {
 export function formatDateForInput(dateStr) {
   if (!dateStr) return '';
   try {
-    const d = dateStr.toDate ? dateStr.toDate() : new Date(dateStr);
+    const d = parseDate(dateStr);
     return d.toISOString().split('T')[0];
   } catch { return ''; }
 }
@@ -91,9 +96,9 @@ export function thisMonth() {
 export function isThisMonth(dateStr) {
   if (!dateStr) return false;
   try {
-    const d = dateStr.toDate ? dateStr.toDate() : new Date(dateStr);
-    const now = new Date();
-    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    const d = parseDate(dateStr);
+    const currentDate = new Date();
+    return d.getFullYear() === currentDate.getFullYear() && d.getMonth() === currentDate.getMonth();
   } catch { return false; }
 }
 

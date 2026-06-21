@@ -9,7 +9,7 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { createUserRecord } from '../../auth.js';
-import { updateUser, findUserByEmail } from '../../db.js';
+import { updateUser, findUserByEmail, getUserById } from '../../db.js';
 import { navigate } from '../../router.js';
 import { toast } from '../../components/toast.js';
 import { escapeHtml } from '../../utils.js';
@@ -42,7 +42,6 @@ export async function renderTutorForm(params = {}) {
 
   if (isEdit) {
     try {
-      const { getUserById } = await import('../../db.js');
       tutor = await getUserById(params.id);
     } catch (e) {
       return `<div class="empty-state"><h3>Error loading tutor</h3><p>${e.message}</p></div>`;
