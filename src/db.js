@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase.js';
 import { getState } from './store.js';
+import { parseDate } from './utils.js';
 
 // ---- Helpers ----
 function now() { return serverTimestamp(); }
@@ -85,16 +86,16 @@ export async function getReports({ studentId, tutorId, status, subject, assessme
   if (dateFrom) {
     const from = new Date(dateFrom);
     results = results.filter(r => {
-      const d = r.assessmentDate?.toDate ? r.assessmentDate.toDate() : new Date(r.assessmentDate);
-      return d >= from;
+      const d = parseDate(r.assessmentDate);
+      return d && d >= from;
     });
   }
   if (dateTo) {
     const to = new Date(dateTo);
     to.setHours(23, 59, 59, 999);
     results = results.filter(r => {
-      const d = r.assessmentDate?.toDate ? r.assessmentDate.toDate() : new Date(r.assessmentDate);
-      return d <= to;
+      const d = parseDate(r.assessmentDate);
+      return d && d <= to;
     });
   }
 

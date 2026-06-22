@@ -14,3 +14,5 @@
 - **Code Smells & Bug Prevention**: Fixed variable shadowing (e.g., local `Date` objects hiding global `now()` functions) to ensure reliable helper behavior.
 - **DRY Refactoring**: Centralized duplicated logic (e.g., date parsing in `utils.js` into a shared `parseDate` helper) to improve maintainability.
 - **Vite Build Optimizations**: Resolved CSS `@import` ordering issues and converted ineffective dynamic imports to static imports to fix Vite compiler warnings during build.
+- **Robust Date Parsing**: Addressed a critical bug where native `new Date()` failed silently on Firestore Timestamp objects during date filtering and PDF generation. Consolidated all date handling to use the robust `parseDate` and `formatDateForInput` utilities.
+- **State Initialization**: Removed redundant list rebuilds (e.g. `studentMap` and `tutorMap` generation) in `reports/list.js` during delete actions to reduce unnecessary iteration cycles.

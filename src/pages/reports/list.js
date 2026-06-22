@@ -6,7 +6,7 @@ import { getReports, getStudents, getUsers, deleteReport } from '../../db.js';
 import { navigate } from '../../router.js';
 import {
   formatDate, escapeHtml, statusLabel, workingLevelClass,
-  SUBJECTS, ASSESSMENT_TYPES, debounce
+  SUBJECTS, ASSESSMENT_TYPES, debounce, parseDate
 } from '../../utils.js';
 import { isAdmin } from '../../store.js';
 import { toast } from '../../components/toast.js';
@@ -217,14 +217,14 @@ export function initReportsList(params = {}) {
     if (dateFrom) {
       const from = new Date(dateFrom);
       filtered = filtered.filter(r => {
-        const d = r.assessmentDate ? new Date(r.assessmentDate) : null;
+        const d = parseDate(r.assessmentDate);
         return d && d >= from;
       });
     }
     if (dateTo) {
       const to = new Date(dateTo); to.setHours(23,59,59,999);
       filtered = filtered.filter(r => {
-        const d = r.assessmentDate ? new Date(r.assessmentDate) : null;
+        const d = parseDate(r.assessmentDate);
         return d && d <= to;
       });
     }
@@ -273,10 +273,6 @@ function bindActions() {
         await deleteReport(id);
         // Remove from local list and re-render
         allReports = allReports.filter(r => r.id !== id);
-        const studentMap = {};
-        students.forEach(s => { studentMap[s.id] = s; });
-        const tutorMap = {};
-        tutors.forEach(t => { tutorMap[t.id] = t; });
         const wrapper = document.getElementById('reports-table-wrapper');
         if (wrapper) wrapper.innerHTML = renderReportsTable(allReports, studentMap, tutorMap);
         const subtitle = document.querySelector('.page-subtitle');
