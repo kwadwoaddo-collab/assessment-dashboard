@@ -70,7 +70,7 @@ export async function deactivateStudent(id) {
 // ================================================================
 
 export async function getReports({ studentId, tutorId, status, subject, assessmentType, dateFrom, dateTo } = {}) {
-  let constraints = [orderBy('createdAt', 'desc')];
+  let constraints = [orderBy('createdAt', 'desc'), limit(1000)];
 
   if (studentId) constraints.unshift(where('studentId', '==', studentId));
   if (tutorId)   constraints.unshift(where('createdBy', '==', tutorId));
@@ -100,6 +100,12 @@ export async function getReports({ studentId, tutorId, status, subject, assessme
   }
 
   return results;
+}
+
+export async function getPendingReportsCount() {
+  const q = query(collection(db, 'reports'), where('status', '==', 'submitted'));
+  const snap = await getCountFromServer(q);
+  return snap.data().count;
 }
 
 export async function getReportById(id) {

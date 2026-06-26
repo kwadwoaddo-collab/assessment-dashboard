@@ -9,7 +9,7 @@ import { auth } from './firebase.js';
 import { getState, setState, subscribe } from './store.js';
 import { navigate, initRouter, registerRoute, render } from './router.js';
 import { renderSidebar, updateActiveNav } from './components/nav.js';
-import { getReports } from './db.js';
+import { getPendingReportsCount } from './db.js';
 
 // ── Pages ──────────────────────────────────────────────────────
 import { renderLogin, initLogin } from './pages/login.js';
@@ -113,9 +113,9 @@ async function refreshPendingCount() {
   const user = getState('currentUser');
   if (!user || user.role !== 'admin') return;
   try {
-    const reports = await getReports({ status: 'submitted' });
-    setState('pendingReportsCount', reports.length);
-    renderSidebar(reports.length);
+    const count = await getPendingReportsCount();
+    setState('pendingReportsCount', count);
+    renderSidebar(count);
   } catch (_) {}
 }
 
