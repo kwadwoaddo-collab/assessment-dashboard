@@ -2,7 +2,7 @@
 // Student Bulk Import (CSV)
 // ================================================================
 
-import { createStudent, getStudents } from '../../db.js';
+import { createStudent, getStudents, importStudentsBulk } from '../../db.js';
 import { navigate } from '../../router.js';
 import { toast } from '../../components/toast.js';
 import { escapeHtml, YEAR_GROUPS } from '../../utils.js';
@@ -435,25 +435,26 @@ export function initImportStudents() {
     if (confirmBtn) confirmBtn.disabled = true;
     progress?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-    let done = 0, failed = 0;
-    for (const row of valid) {
-      try {
+    try {
+      const dataToImport = valid.map(row => {
         const { _errors, _duplicate, ...data } = row;
-        await createStudent(data);
-        done++;
-      } catch (e) {
-        console.error('Failed to import row:', row, e);
-        failed++;
-      }
-      const pct = Math.round(((done + failed) / valid.length) * 100);
-      if (bar) bar.style.width = pct + '%';
-      if (progressText) progressText.textContent = `Importing… ${done + failed} of ${valid.length}`;
-    }
-
-    if (failed === 0) {
-      toast.success(`✅ Successfully imported ${done} student${done !== 1 ? 's' : ''}!`);
-    } else {
-      toast.warning(`Imported ${done} students · ${failed} failed (check console).`);
+        return data;
+      });
+      
+      if (bar) bar.style.width = '50%';
+      if (progressText) progressText.textContent = `Importing ${valid.length} students...`;
+      
+      await importStudentsBulk(dataToImport);
+      
+      if (bar) bar.style.width = '100%';
+      if (progressText) progressText.textContent = `Successfully imported ${valid.length} students!`;
+      toast.success(`✅ Successfully imported ${valid.length} student${valid.length !== 1 ? 's' : ''}!`);
+    } catch (e) {
+      console.error('Bulk import failed:', e);
+      toast.error('Bulk import failed: ' + e.message);
+      if (confirmBtn) confirmBtn.disabled = false;
+      if (progress) progress.style.display = 'none';
+      return;
     }
 
     setTimeout(() => navigate('students'), 1500);

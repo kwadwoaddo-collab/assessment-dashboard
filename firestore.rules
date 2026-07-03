@@ -26,7 +26,13 @@ service cloud.firestore {
     match /users/{userId} {
       allow read:   if isAuth() && (request.auth.uid == userId || isAdmin() || isManager());
       allow create: if isAdmin();
-      allow update: if isAuth() && (request.auth.uid == userId || isAdmin());
+      allow update: if isAuth() && (
+        isAdmin() || 
+        (request.auth.uid == userId && 
+         request.resource.data.role == resource.data.role &&
+         request.resource.data.email == resource.data.email &&
+         (resource.data.active == null || request.resource.data.active == resource.data.active))
+      );
       allow delete: if false;
     }
 
@@ -34,7 +40,7 @@ service cloud.firestore {
     // Any authenticated staff member can read students.
     // Only admins & managers can create/update/deactivate students.
     match /students/{studentId} {
-      allow read:          if isAuth();
+      allow read:          if isAuth() && isStaff();
       allow create, update: if isAdmin() || isManager();
       allow delete:        if false;
     }
@@ -46,20 +52,25 @@ service cloud.firestore {
     // Admins & managers can update any report (approve/reject/edit).
     // Only admins can delete draft reports.
     match /reports/{reportId} {
-      allow read:   if isAuth();
-      allow create: if isAuth() && (isTutor() || isAdmin() || isManager());
+      allow read:   if isAuth() && isStaff();
+      allow create: if isAuth() && 
+        (isTutor() || isAdmin() || isManager()) && 
+        request.resource.data.createdBy == request.auth.uid &&
+        request.resource.data.status in ['draft', 'submitted'];
       allow update: if isAuth() && (
-        (resource.data.createdBy == request.auth.uid &&
-          resource.data.status in ['draft', 'rejected']) ||
         isAdmin() ||
-        isManager()
+        isManager() ||
+        (resource.data.createdBy == request.auth.uid &&
+         resource.data.status in ['draft', 'rejected'] &&
+         request.resource.data.createdBy == resource.data.createdBy &&
+         request.resource.data.status in ['draft', 'submitted'])
       );
       allow delete: if (isAdmin() || isManager()) && resource.data.status == 'draft';
     }
 
     // ── Cash Receipts Collection ─────────────────────────────────
     match /cash_receipts/{receiptId} {
-      allow read, create, update: if isAuth();
+      allow read, create, update: if isAuth() && isStaff();
       allow delete: if false;
     }
   }

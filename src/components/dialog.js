@@ -168,14 +168,14 @@ export function promptDialog(message, defaultValue = '', options = {}) {
 
     dialog.innerHTML = `
       <div class="modern-dialog-content">
-        <div class="modern-dialog-title">\${title}</div>
-        <div class="modern-dialog-desc">\${message}</div>
+        <div class="modern-dialog-title">${title}</div>
+        <div class="modern-dialog-desc">${message}</div>
         <div style="margin-bottom: 24px;">
-          <input type="\${type}" id="dialog-input" class="form-control" value="\${escapedValue}" style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid var(--border-color, rgba(148, 163, 184, 0.5)); border-radius: 8px; background: rgba(0,0,0,0.1); color: inherit;" autocomplete="off"/>
+          <input type="${type}" id="dialog-input" class="form-control" value="${escapedValue}" style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid var(--border-color, rgba(148, 163, 184, 0.5)); border-radius: 8px; background: rgba(0,0,0,0.1); color: inherit;" autocomplete="off"/>
         </div>
         <div class="modern-dialog-actions">
-          <button class="btn btn-secondary" id="dialog-cancel">\${cancelText}</button>
-          <button class="btn btn-primary" id="dialog-confirm">\${confirmText}</button>
+          <button class="btn btn-secondary" id="dialog-cancel">${cancelText}</button>
+          <button class="btn btn-primary" id="dialog-confirm">${confirmText}</button>
         </div>
       </div>
     `;

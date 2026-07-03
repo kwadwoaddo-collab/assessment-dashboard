@@ -15,6 +15,8 @@ import { confirmDialog } from '../../components/dialog.js';
 let allReports = [];
 let students = [];
 let tutors = [];
+let studentMap = {};
+let tutorMap = {};
 
 export async function renderReportsList(params = {}) {
   try {
@@ -27,9 +29,9 @@ export async function renderReportsList(params = {}) {
     return `<div class="empty-state"><h3>Error loading reports</h3><p>${e.message}</p></div>`;
   }
 
-  const studentMap = {};
+  studentMap = {};
   students.forEach(s => { studentMap[s.id] = s; });
-  const tutorMap = {};
+  tutorMap = {};
   tutors.forEach(t => { tutorMap[t.id] = t; });
 
   return `
@@ -183,11 +185,6 @@ function renderReportsTable(reports, studentMap, tutorMap) {
 
 export function initReportsList(params = {}) {
   document.getElementById('btn-new-report')?.addEventListener('click', () => navigate('report-create'));
-
-  const studentMap = {};
-  students.forEach(s => { studentMap[s.id] = s; });
-  const tutorMap = {};
-  tutors.forEach(t => { tutorMap[t.id] = t; });
 
   // Apply initial filter from params
   if (params.status) {

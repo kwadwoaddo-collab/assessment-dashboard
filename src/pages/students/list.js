@@ -138,32 +138,34 @@ export function initStudentsList() {
   const searchInput = document.getElementById('search-students');
   const statusFilter = document.getElementById('filter-status');
 
-  function applyFilters() {
-    const q = searchInput?.value.toLowerCase() || '';
-    const status = statusFilter?.value || 'active';
-
-    let filtered = allStudents;
-
-    if (status === 'active')   filtered = filtered.filter(s => s.active !== false);
-    if (status === 'inactive') filtered = filtered.filter(s => s.active === false);
-
-    if (q) {
-      filtered = filtered.filter(s =>
-        (s.studentName || '').toLowerCase().includes(q) ||
-        (s.parentName || '').toLowerCase().includes(q) ||
-        (s.parentEmail || '').toLowerCase().includes(q) ||
-        (s.school || '').toLowerCase().includes(q)
-      );
-    }
-
-    const wrapper = document.getElementById('students-table-wrapper');
-    if (wrapper) wrapper.innerHTML = renderStudentsTable(filtered);
-    bindTableActions();
-  }
-
   searchInput?.addEventListener('input', debounce(applyFilters, 250));
   statusFilter?.addEventListener('change', applyFilters);
 
+  bindTableActions();
+}
+
+function applyFilters() {
+  const searchInput = document.getElementById('search-students');
+  const statusFilter = document.getElementById('filter-status');
+  const q = searchInput?.value.toLowerCase() || '';
+  const status = statusFilter?.value || 'active';
+
+  let filtered = allStudents;
+
+  if (status === 'active')   filtered = filtered.filter(s => s.active !== false);
+  if (status === 'inactive') filtered = filtered.filter(s => s.active === false);
+
+  if (q) {
+    filtered = filtered.filter(s =>
+      (s.studentName || '').toLowerCase().includes(q) ||
+      (s.parentName || '').toLowerCase().includes(q) ||
+      (s.parentEmail || '').toLowerCase().includes(q) ||
+      (s.school || '').toLowerCase().includes(q)
+    );
+  }
+
+  const wrapper = document.getElementById('students-table-wrapper');
+  if (wrapper) wrapper.innerHTML = renderStudentsTable(filtered);
   bindTableActions();
 }
 
@@ -190,9 +192,7 @@ function bindTableActions() {
         await deactivateStudent(btn.dataset.studentDeactivate);
         toast.success('Student deactivated');
         allStudents = await getStudents({ includeInactive: true });
-        const wrapper = document.getElementById('students-table-wrapper');
-        if (wrapper) wrapper.innerHTML = renderStudentsTable(allStudents);
-        bindTableActions();
+        applyFilters();
       } catch (e) {
         toast.error('Failed to deactivate student');
       }

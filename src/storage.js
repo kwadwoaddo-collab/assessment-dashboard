@@ -18,8 +18,8 @@ export const MAX_SIZE_MB = 10;
 /** Upload one file and call onProgress(0-100). Returns { url, path, name, type, size } */
 export function uploadAttachment(reportId, file, onProgress) {
   return new Promise((resolve, reject) => {
-    if (!ACCEPTED_TYPES.includes(file.type) && !file.type.startsWith('image/')) {
-      reject(new Error(`Unsupported file type: ${file.type}`));
+    if (!file.type || (!ACCEPTED_TYPES.includes(file.type) && !file.type.startsWith('image/'))) {
+      reject(new Error(`Unsupported file type: ${file.type || 'unknown'}`));
       return;
     }
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {

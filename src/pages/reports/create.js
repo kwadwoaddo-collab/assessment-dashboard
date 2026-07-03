@@ -574,7 +574,6 @@ export function initReportCreate(params = {}) {
   document.getElementById('step1-student')?.addEventListener('change', (e) => {
     selectedStudent = students.find(s => s.id === e.target.value) || null;
     formData.studentId = e.target.value;
-    const preview = document.querySelector('.info-block');
     if (selectedStudent) {
       const div = document.createElement('div');
       div.className = 'info-block mt-2';
@@ -586,6 +585,9 @@ export function initReportCreate(params = {}) {
       const existing = document.querySelector('.info-block');
       if (existing) existing.replaceWith(div);
       else document.querySelector('.form-section')?.appendChild(div);
+    } else {
+      const existing = document.querySelector('.info-block');
+      if (existing) existing.remove();
     }
   });
 }

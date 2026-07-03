@@ -108,19 +108,21 @@ export function initTutorsList() {
   const searchInput = document.getElementById('search-tutors');
   const statusFilter = document.getElementById('filter-status');
 
-  function applyFilters() {
-    const q = searchInput?.value.toLowerCase() || '';
-    const status = statusFilter?.value || 'active';
-    let filtered = allTutors;
-    if (status === 'active')   filtered = filtered.filter(t => t.active !== false);
-    if (status === 'inactive') filtered = filtered.filter(t => t.active === false);
-    if (q) filtered = filtered.filter(t => (t.name || '').toLowerCase().includes(q) || (t.email || '').toLowerCase().includes(q));
-    document.getElementById('tutors-table-wrapper').innerHTML = renderTutorsTable(filtered);
-    bindActions();
-  }
-
   searchInput?.addEventListener('input', debounce(applyFilters, 250));
   statusFilter?.addEventListener('change', applyFilters);
+  bindActions();
+}
+
+function applyFilters() {
+  const searchInput = document.getElementById('search-tutors');
+  const statusFilter = document.getElementById('filter-status');
+  const q = searchInput?.value.toLowerCase() || '';
+  const status = statusFilter?.value || 'active';
+  let filtered = allTutors;
+  if (status === 'active')   filtered = filtered.filter(t => t.active !== false);
+  if (status === 'inactive') filtered = filtered.filter(t => t.active === false);
+  if (q) filtered = filtered.filter(t => (t.name || '').toLowerCase().includes(q) || (t.email || '').toLowerCase().includes(q));
+  document.getElementById('tutors-table-wrapper').innerHTML = renderTutorsTable(filtered);
   bindActions();
 }
 
@@ -137,8 +139,7 @@ function bindActions() {
         await updateUser(btn.dataset.tutorDeactivate, { active: false });
         toast.success('Tutor deactivated');
         allTutors = await getUsers({ role: 'tutor' });
-        document.getElementById('tutors-table-wrapper').innerHTML = renderTutorsTable(allTutors);
-        bindActions();
+        applyFilters();
       } catch { toast.error('Failed to deactivate tutor'); }
     });
   });
@@ -149,8 +150,7 @@ function bindActions() {
         await updateUser(btn.dataset.tutorActivate, { active: true });
         toast.success('Tutor reactivated');
         allTutors = await getUsers({ role: 'tutor' });
-        document.getElementById('tutors-table-wrapper').innerHTML = renderTutorsTable(allTutors);
-        bindActions();
+        applyFilters();
       } catch { toast.error('Failed to reactivate tutor'); }
     });
   });

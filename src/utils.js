@@ -36,7 +36,10 @@ export function formatDateForInput(dateStr) {
 
 export function toISODate(dateStr) {
   if (!dateStr) return null;
-  return new Date(dateStr).toISOString();
+  try {
+    const d = parseDate(dateStr);
+    return d ? d.toISOString() : null;
+  } catch { return null; }
 }
 
 export function generateId() {

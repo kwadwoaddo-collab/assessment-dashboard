@@ -328,3 +328,29 @@ export async function getDashboardStats(tutorId = null) {
     avgScore:           Math.round(scoreAggregate.data().avgScore || 0) || null,
   };
 }
+
+export async function importStudentsBulk(studentsList) {
+  const currentUid = uid();
+  const currentTimestamp = now();
+  const chunkSize = 400; // Safe margin below 500
+  
+  for (let i = 0; i < studentsList.length; i += chunkSize) {
+    const chunk = studentsList.slice(i, i + chunkSize);
+    const batch = writeBatch(db);
+    
+    chunk.forEach(data => {
+      const docRef = doc(collection(db, 'students'));
+      batch.set(docRef, {
+        ...data,
+        centreId: 'sydenham',
+        active: true,
+        createdAt: currentTimestamp,
+        createdBy: currentUid,
+        updatedAt: currentTimestamp,
+        updatedBy: currentUid,
+      });
+    });
+    
+    await batch.commit();
+  }
+}
