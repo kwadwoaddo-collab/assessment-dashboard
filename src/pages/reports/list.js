@@ -34,6 +34,11 @@ export async function renderReportsList(params = {}) {
   tutorMap = {};
   tutors.forEach(t => { tutorMap[t.id] = t; });
 
+  let initialReports = allReports;
+  if (params.status) {
+    initialReports = initialReports.filter(r => r.status === params.status);
+  }
+
   return `
     <div>
       <div class="page-header">
@@ -111,7 +116,7 @@ export async function renderReportsList(params = {}) {
       <!-- Table -->
       <div class="card" style="padding:0;overflow:hidden;">
         <div class="table-wrapper" id="reports-table-wrapper">
-          ${renderReportsTable(allReports, studentMap, tutorMap)}
+          ${renderReportsTable(initialReports, studentMap, tutorMap)}
         </div>
       </div>
     </div>

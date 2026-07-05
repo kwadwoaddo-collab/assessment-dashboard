@@ -46,7 +46,7 @@ export async function renderTutorsList() {
 
       <div class="card" style="padding:0;overflow:hidden;">
         <div class="table-wrapper" id="tutors-table-wrapper">
-          ${renderTutorsTable(allTutors)}
+          ${renderTutorsTable(allTutors.filter(t => t.active !== false))}
         </div>
       </div>
     </div>

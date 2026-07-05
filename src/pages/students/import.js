@@ -142,6 +142,7 @@ function downloadTemplate() {
 
 // ── Render ────────────────────────────────────────────────────
 export async function renderImportStudents() {
+  parsedRows = [];
   try {
     const students = await getStudents({ includeInactive: true });
     existingNames = new Set(students.map(s => s.studentName?.toLowerCase().trim()));

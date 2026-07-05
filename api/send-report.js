@@ -18,10 +18,44 @@ export default async function handler(req, res) {
   // CORS – allow requests from same origin only
   res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  // ── Authentication check ───────────────────────────────────────
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorised. Missing or invalid Authorization header.' });
+  }
+  const idToken = authHeader.split(' ')[1];
+
+  const apiKey = process.env.VITE_FIREBASE_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'VITE_FIREBASE_API_KEY is not set on the server' });
+  }
+
+  try {
+    const verifyResp = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      }
+    );
+    if (!verifyResp.ok) {
+      const errData = await verifyResp.json().catch(() => ({}));
+      return res.status(401).json({ error: 'Unauthorised. Invalid token.', details: errData.error });
+    }
+    const verifyData = await verifyResp.json();
+    if (!verifyData.users || verifyData.users.length === 0) {
+      return res.status(401).json({ error: 'Unauthorised. User not found.' });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to verify token: ' + err.message });
+  }
+  // ───────────────────────────────────────────────────────────────
 
   const {
     parentEmail,

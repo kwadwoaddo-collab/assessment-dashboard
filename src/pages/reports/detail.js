@@ -292,7 +292,7 @@ export function initReportDetail(params = {}) {
     try {
       const [report, student, tutor, approver] = await loadReportData(params.id);
       const doc = await generateReportPDF(report, student, tutor, approver);
-      const assessmentDate = report.assessmentDate ? formatDateForInput(report.assessmentDate) : new Date().toISOString().split('T')[0];
+      const assessmentDate = report.assessmentDate ? formatDateForInput(report.assessmentDate) : formatDateForInput(new Date());
       const filename = `Report_${(student?.studentName || 'student').replace(/\s+/g,'_')}_${(report.subject || '').replace(/\s+/g,'_')}_${assessmentDate}.pdf`;
       downloadPDF(doc, filename);
       toast.success('PDF downloaded!');
@@ -365,7 +365,7 @@ export function initReportDetail(params = {}) {
         });
       } else {
         // Download PDF as fallback if email not configured
-        const assessmentDate = rep.assessmentDate ? formatDateForInput(rep.assessmentDate) : new Date().toISOString().split('T')[0];
+        const assessmentDate = rep.assessmentDate ? formatDateForInput(rep.assessmentDate) : formatDateForInput(new Date());
         downloadPDF(doc, `Report_${stu.studentName.replace(/\s+/g,'_')}_${(rep.subject || '').replace(/\s+/g,'_')}_${assessmentDate}.pdf`);
         toast.warning('Email not configured — PDF downloaded instead. Set up EmailJS in .env to enable email sending.');
       }

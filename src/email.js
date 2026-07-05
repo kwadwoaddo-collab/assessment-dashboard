@@ -15,6 +15,8 @@
 // Verify your domain to send to any address.
 // ================================================================
 
+import { auth } from './firebase.js';
+
 /**
  * Returns true when the app is deployed to Vercel (has the /api/send-report route).
  * In local dev without the Vercel CLI, email falls back to PDF download.
@@ -48,9 +50,18 @@ export async function sendReportEmail({
   pdfBase64,
   pdfFilename,
 }) {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error('User must be signed in to send reports.');
+  }
+  const idToken = await user.getIdToken();
+
   const response = await fetch('/api/send-report', {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken}`
+    },
     body: JSON.stringify({
       parentEmail,
       parentName,

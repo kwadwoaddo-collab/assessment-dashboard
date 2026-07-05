@@ -185,7 +185,7 @@ function renderStep2() {
         <div class="form-group">
           <label class="form-label" for="assessmentDate">Assessment Date <span class="required">*</span></label>
           <input type="date" id="assessmentDate" class="form-control" required aria-errormessage="assessmentDate-error"
-            value="${formData.assessmentDate ? formatDateForInput(formData.assessmentDate) : new Date().toISOString().split('T')[0]}" />
+            value="${formData.assessmentDate ? formatDateForInput(formData.assessmentDate) : formatDateForInput(new Date())}" />
           <div id="assessmentDate-error" class="error-msg"><span aria-hidden="true">❌</span> Assessment date is required.</div>
         </div>
         <div class="form-group">

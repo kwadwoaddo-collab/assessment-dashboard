@@ -7,6 +7,7 @@ import { navigate } from '../../router.js';
 import { formatDate, initials, escapeHtml, debounce } from '../../utils.js';
 import { toast } from '../../components/toast.js';
 import { isAdmin } from '../../store.js';
+import { confirmDialog } from '../../components/dialog.js';
 
 let allStudents = [];
 
@@ -52,7 +53,7 @@ export async function renderStudentsList() {
       <!-- Table -->
       <div class="card" style="padding:0;overflow:hidden;">
         <div class="table-wrapper" id="students-table-wrapper">
-          ${renderStudentsTable(allStudents)}
+          ${renderStudentsTable(allStudents.filter(s => s.active !== false))}
         </div>
       </div>
     </div>
@@ -168,8 +169,6 @@ function applyFilters() {
   if (wrapper) wrapper.innerHTML = renderStudentsTable(filtered);
   bindTableActions();
 }
-
-import { confirmDialog } from '../../components/dialog.js';
 
 function bindTableActions() {
   document.querySelectorAll('[data-student-view]').forEach(btn => {
