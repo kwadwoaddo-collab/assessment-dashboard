@@ -172,7 +172,7 @@ export function initTutorForm(params = {}) {
 
       // Step 4: Send the tutor their magic sign-in link + branded invite email
       btnSave.textContent = 'Sending invite…';
-      await sendMagicLink(email, name);
+      await sendMagicLink(email, false);
 
       toast.success(`✉ Account created & invite sent to ${name}`);
       navigate('tutors');
@@ -190,7 +190,7 @@ export function initTutorForm(params = {}) {
             await updateUser(existingUser.id, { name, role });
           }
           // Resend the magic sign-in link regardless
-          await sendMagicLink(email, name);
+          await sendMagicLink(email, false);
 
           toast.success(`✉ Sign-in link resent to ${name}`);
           navigate('tutors');

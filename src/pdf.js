@@ -96,7 +96,7 @@ function addInfoGrid(doc, report, student, tutor, y) {
     ['Student Name',         student?.studentName       || '—',   'Assessment Date',      formatDate(report.assessmentDate)],
     ['Parent / Guardian',    student?.parentName        || '—',   'Subject',              report.subject            || '—'],
     ['Year Group',           student?.yearGroup         || '—',   'Assessment Type',      report.assessmentType     || '—'],
-    ['Centre',               student?.school            || '—',   'Tutor',                tutor?.name               || '—'],
+    ['School',               student?.school            || '—',   'Tutor',                tutor?.name               || '—'],
     ['Working Level',        report.workingLevel        || '—',   'Score',                score],
     ['Homework Completion',  report.homeworkCompletion  || '—',   'Attendance',           report.attendance         || '—'],
     ['Behaviour & Engagement', report.behaviourEngagement || '—', 'Status',               statusText],
@@ -329,7 +329,7 @@ export async function generateReportPDF(report, student, tutor, approver) {
   } catch (_) {}
 
   // ── Draw page border ───────────────────────────────────────────
-  addPageBorder(doc);
+  // Border is drawn on all pages in the final footer loop.
 
   // ── Header  (y ≈ 0–29 mm) ────────────────────────────────────
   let y = addHeader(doc, centre, logoDataUrl);
@@ -347,18 +347,24 @@ export async function generateReportPDF(report, student, tutor, approver) {
   const COMMENTS_MIN_H    = 30; // min height for comments box
   const FOOTER_Y          = PAGE_H - FOOTER_RESERVED;
 
-  // Pin auth block — leave room for comments box + footer
-  const authY = Math.min(y, FOOTER_Y - AUTH_H - COMMENTS_MIN_H - 2);
-  addAuthorisationBlock(doc, report, tutor, approver, authY);
+  // If there is not enough room on the current page for the auth block and comments box,
+  // push them to a new page.
+  if (y > FOOTER_Y - AUTH_H - COMMENTS_MIN_H - 2) {
+    doc.addPage();
+    y = MARGIN + 10; // Start at the top of the new page
+  }
+
+  addAuthorisationBlock(doc, report, tutor, approver, y);
   const afterAuth = doc.lastAutoTable.finalY + 4;
 
   // ── Additional Comments box (fills white space) ────────────────
   addAdditionalCommentsBox(doc, report.additionalComments, report.managerComments, afterAuth, FOOTER_Y - 2);
 
-  // ── Footer on all pages ────────────────────────────────────────
+  // ── Footer and Border on all pages ──────────────────────────────
   const totalPages = doc.internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
+    addPageBorder(doc);
     addFooter(doc, centre.name, report.id || 'DRAFT', i, totalPages);
   }
 

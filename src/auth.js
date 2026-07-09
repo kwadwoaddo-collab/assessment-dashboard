@@ -103,13 +103,15 @@ export async function getUserById(uid) {
  * Firebase sends the email using the template configured in Firebase Console
  * (Authentication → Templates → Sign-in link).
  */
-export async function sendMagicLink(email) {
+export async function sendMagicLink(email, saveToStorage = true) {
   const actionCodeSettings = {
     url: window.location.origin + '/?magiclink=1',
     handleCodeInApp: true,
   };
   await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-  window.localStorage.setItem('emailForSignIn', email);
+  if (saveToStorage) {
+    window.localStorage.setItem('emailForSignIn', email);
+  }
 }
 
 /**

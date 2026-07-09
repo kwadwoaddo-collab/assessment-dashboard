@@ -87,13 +87,13 @@ function parseCSV(text) {
 
 function normaliseDate(val) {
   if (!val) return null;
-  // Try DD/MM/YYYY, DD-MM-YYYY, YYYY-MM-DD, MM/DD/YYYY
-  const dmySlash = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (dmySlash) return `${dmySlash[3]}-${dmySlash[2].padStart(2,'0')}-${dmySlash[1].padStart(2,'0')}`;
-  const dmyDash = val.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
-  if (dmyDash) return `${dmyDash[3]}-${dmyDash[2].padStart(2,'0')}-${dmyDash[1].padStart(2,'0')}`;
-  const isoDate = val.match(/^\d{4}-\d{2}-\d{2}$/);
-  if (isoDate) return val;
+  const v = val.trim();
+  // Try YYYY/MM/DD or YYYY-MM-DD
+  const ymd = v.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/);
+  if (ymd) return `${ymd[1]}-${ymd[2].padStart(2,'0')}-${ymd[3].padStart(2,'0')}`;
+  // Try DD/MM/YYYY or DD-MM-YYYY
+  const dmy = v.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  if (dmy) return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`;
   return null;
 }
 

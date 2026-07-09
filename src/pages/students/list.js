@@ -2,7 +2,7 @@
 // Students List Page
 // ================================================================
 
-import { getStudents, deactivateStudent } from '../../db.js';
+import { getStudents, deactivateStudent, updateStudent } from '../../db.js';
 import { navigate } from '../../router.js';
 import { formatDate, initials, escapeHtml, debounce } from '../../utils.js';
 import { toast } from '../../components/toast.js';
@@ -109,7 +109,10 @@ function renderStudentsTable(students) {
           ${s.active !== false ? `
           <button class="btn btn-danger btn-sm" data-student-deactivate="${s.id}" title="Deactivate">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-          </button>` : ''}` : ''}
+          </button>` : `
+          <button class="btn btn-secondary btn-sm" data-student-activate="${s.id}" title="Reactivate">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          </button>`}` : ''}
         </div>
       </td>
     </tr>
@@ -194,6 +197,19 @@ function bindTableActions() {
         applyFilters();
       } catch (e) {
         toast.error('Failed to deactivate student');
+      }
+    });
+  });
+
+  document.querySelectorAll('[data-student-activate]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      try {
+        await updateStudent(btn.dataset.studentActivate, { active: true });
+        toast.success('Student reactivated');
+        allStudents = await getStudents({ includeInactive: true });
+        applyFilters();
+      } catch (e) {
+        toast.error('Failed to reactivate student');
       }
     });
   });
