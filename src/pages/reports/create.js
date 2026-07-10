@@ -6,7 +6,7 @@ import {
   getStudents, getStudentById, getReportById,
   createReport, updateReport, submitReport, findExistingDraft, approveReport
 } from '../../db.js';
-import { getState, isAdmin } from '../../store.js';
+import { getState, isAdmin, isManagerOrAdmin } from '../../store.js';
 import { navigate } from '../../router.js';
 import { toast } from '../../components/toast.js';
 import {
@@ -82,7 +82,7 @@ function renderStepIndicator() {
 
 function renderStep(reportId) {
   const editMode = !!reportId;
-  const adminEdit = editMode && isAdmin() && !['draft','rejected'].includes(formData.status);
+  const adminEdit = editMode && isManagerOrAdmin() && !['draft','rejected'].includes(formData.status);
   // For admin edits of live reports: save keeps current status; no re-submit needed
   const saveLabel = adminEdit ? 'Save Changes' : 'Save Draft';
   const step4Action = adminEdit
@@ -304,11 +304,11 @@ function renderStep3() {
           placeholder="Any other comments for the parent or student not covered above…">${escapeHtml(formData.additionalComments || '')}</textarea>
       </div>
 
-      ${isAdmin() ? `
+      ${isManagerOrAdmin() ? `
       <div class="form-group mt-2">
         <label class="form-label" for="managerComments">
           Manager Comments
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-muted);margin-left:6px;">printed on the PDF (admin only)</span>
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-muted);margin-left:6px;">printed on the PDF (manager/admin only)</span>
         </label>
         <textarea id="managerComments" class="form-control" rows="4"
           placeholder="Manager comments or feedback…">${escapeHtml(formData.managerComments || '')}</textarea>
@@ -428,7 +428,7 @@ function collectStep3() {
   Object.assign(formData, { strengths, areasForImprovement: areas, topicsCovered: topics,
     tutorFeedback: null, recommendations: recs, additionalComments: extra });
 
-  if (isAdmin()) {
+  if (isManagerOrAdmin()) {
     const mgrComments = document.getElementById('managerComments')?.value.trim();
     formData.managerComments = mgrComments || null;
   }
@@ -518,7 +518,7 @@ export function initReportCreate(params = {}) {
     else if (currentStep === 3) collectStep3();
     if (!formData.studentId) { toast.error('Please select a student first.'); return; }
     // Admin editing a live report: preserve status; otherwise save as draft
-    const adminEdit = !!params.reportId && isAdmin() && !['draft','rejected'].includes(formData.status);
+    const adminEdit = !!params.reportId && isManagerOrAdmin() && !['draft','rejected'].includes(formData.status);
     const id = await saveReport(adminEdit);
     if (id) { toast.success(adminEdit ? 'Report updated' : 'Draft saved'); navigate('report-detail', { id }); }
   });

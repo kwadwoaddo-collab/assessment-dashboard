@@ -64,11 +64,11 @@ function renderAppShell() {
 
 // ── Route Definitions ─────────────────────────────────────────
 function registerRoutes() {
-  const r = (path, renderFn, initFn, titleFn, adminOnly = false) => {
+  const r = (path, renderFn, initFn, titleFn, allowedRoles = null) => {
     registerRoute(path, async () => {
       const user = getState('currentUser');
       if (!user) { navigate('login'); return ''; }
-      if (adminOnly && user.role !== 'admin') { navigate('dashboard'); return ''; }
+      if (allowedRoles && !allowedRoles.includes(user.role)) { navigate('dashboard'); return ''; }
       const params = getState('pageParams') || {};
       return await renderFn(params);
     });
@@ -85,20 +85,20 @@ function registerRoutes() {
 
   r('dashboard',       renderDashboard,     initDashboard,     'Dashboard');
   r('students',        renderStudentsList,  initStudentsList,  'Students');
-  r('student-add',     renderStudentForm,   initStudentForm,   'Add Student',      true);
-  r('student-edit',    renderStudentForm,   initStudentForm,   'Edit Student',     true);
+  r('student-add',     renderStudentForm,   initStudentForm,   'Add Student',      ['admin', 'manager']);
+  r('student-edit',    renderStudentForm,   initStudentForm,   'Edit Student',     ['admin', 'manager']);
   r('student-detail',  renderStudentDetail, initStudentDetail, 'Student Profile');
-  r('student-import',  renderImportStudents, initImportStudents, 'Import Students', true);
-  r('tutors',          renderTutorsList,    initTutorsList,    'Tutors',       true);
-  r('tutor-add',       renderTutorForm,     initTutorForm,     'Add Tutor',    true);
-  r('tutor-edit',      renderTutorForm,     initTutorForm,     'Edit Tutor',   true);
+  r('student-import',  renderImportStudents, initImportStudents, 'Import Students', ['admin', 'manager']);
+  r('tutors',          renderTutorsList,    initTutorsList,    'Tutors',       ['admin']);
+  r('tutor-add',       renderTutorForm,     initTutorForm,     'Add Tutor',    ['admin']);
+  r('tutor-edit',      renderTutorForm,     initTutorForm,     'Edit Tutor',   ['admin']);
   r('reports',         renderReportsList,   initReportsList,   'All Reports');
   r('reports-pending', p => renderReportsList({ status: 'submitted' }),
-                                           p => initReportsList({ status: 'submitted' }), 'Pending Approval', true);
+                                           p => initReportsList({ status: 'submitted' }), 'Pending Approval', ['admin', 'manager']);
   r('report-create',   renderReportCreate,  initReportCreate,  'New Report');
   r('report-detail',   renderReportDetail,  initReportDetail,  'Report Detail');
-  r('report-approve',  renderReportApprove, initReportApprove, 'Review Report', true);
-  r('settings',        renderSettings,      initSettings,      'Settings',     true);
+  r('report-approve',  renderReportApprove, initReportApprove, 'Review Report', ['admin', 'manager']);
+  r('settings',        renderSettings,      initSettings,      'Settings',     ['admin']);
   r('help',            renderHelp,          initHelp,          'Help & Guide');
 
   // Login (no auth guard)

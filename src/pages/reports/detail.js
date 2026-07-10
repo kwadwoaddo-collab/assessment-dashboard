@@ -15,7 +15,7 @@ import {
   formatDate, formatDateTime, escapeHtml,
   statusLabel, workingLevelClass, CENTRES, formatDateForInput
 } from '../../utils.js';
-import { isAdmin, getState } from '../../store.js';
+import { isAdmin, getState, isManagerOrAdmin } from '../../store.js';
 import { renderAttachmentWidget, initAttachmentWidget } from '../../components/attachments.js';
 import { confirmDialog, promptDialog } from '../../components/dialog.js';
 
@@ -41,12 +41,12 @@ export async function renderReportDetail(params = {}) {
   // Tutors can edit their own draft/rejected; admins can edit anything except already-sent
   const canEdit = report.status !== 'sent' && (
     (getState('currentUser')?.uid === report.createdBy && ['draft','rejected'].includes(report.status)) ||
-    isAdmin()
+    isManagerOrAdmin()
   );
   const canSubmit = report.status === 'draft' && user?.uid === report.createdBy;
-  const canApprove = report.status === 'submitted' && isAdmin();
-  const canSend = report.status === 'approved' && isAdmin();
-  const canDelete = report.status === 'draft' && (user?.uid === report.createdBy || isAdmin());
+  const canApprove = report.status === 'submitted' && isManagerOrAdmin();
+  const canSend = report.status === 'approved' && isManagerOrAdmin();
+  const canDelete = report.status === 'draft' && (user?.uid === report.createdBy || isManagerOrAdmin());
 
   const statusBanner = () => {
     if (report.status === 'submitted') return `
@@ -57,7 +57,7 @@ export async function renderReportDetail(params = {}) {
     if (report.status === 'approved') return `
       <div class="status-banner approved">
         <div class="status-banner-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-        <div class="status-banner-content"><h4>Approved – Ready to Send</h4><p>Approved by ${escapeHtml(approver?.name || 'Manager')} on ${formatDate(report.approvedAt)}. ${isAdmin() ? 'Click "Send to Parent" to email the PDF report.' : ''}</p></div>
+        <div class="status-banner-content"><h4>Approved – Ready to Send</h4><p>Approved by ${escapeHtml(approver?.name || 'Manager')} on ${formatDate(report.approvedAt)}. ${isManagerOrAdmin() ? 'Click "Send to Parent" to email the PDF report.' : ''}</p></div>
       </div>`;
     if (report.status === 'rejected') return `
       <div class="status-banner rejected">
@@ -164,7 +164,7 @@ export async function renderReportDetail(params = {}) {
                 ? `<span class="badge badge-active">${report.attachments.length} file${report.attachments.length !== 1 ? 's' : ''}</span>`
                 : ''}
             </div>
-            ${renderAttachmentWidget(report.attachments || [], { editable: isAdmin() && report.status !== 'sent' })}
+            ${renderAttachmentWidget(report.attachments || [], { editable: isManagerOrAdmin() && report.status !== 'sent' })}
           </div>
         </div>
 
@@ -252,16 +252,16 @@ export function initReportDetail(params = {}) {
   document.getElementById('btn-edit')?.addEventListener('click', () => navigate('report-create', { reportId: params.id }));
   document.getElementById('btn-approve-go')?.addEventListener('click', () => navigate('report-approve', { id: params.id }));
 
-  // Init attachment widget (admins can delete from detail view too)
+   // Init attachment widget (admins/managers can delete from detail view too)
   const reportEl = document.getElementById('attachment-widget');
-  if (reportEl && isAdmin()) {
+  if (reportEl && isManagerOrAdmin()) {
     // We need the live report to get attachments for deletion
     (async () => {
       const report = await getReportById(params.id);
       const atts = report?.attachments || [];
       if (atts.length > 0) {
         initAttachmentWidget(atts, {
-          editable: isAdmin() && report.status !== 'sent',
+          editable: isManagerOrAdmin() && report.status !== 'sent',
           reportId: params.id,
           onChange: async (updated) => {
             await updateReport(params.id, { attachments: updated });

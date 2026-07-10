@@ -8,7 +8,7 @@ import {
   formatDate, escapeHtml, statusLabel, workingLevelClass,
   SUBJECTS, ASSESSMENT_TYPES, debounce, parseDate
 } from '../../utils.js';
-import { isAdmin } from '../../store.js';
+import { getState, isAdmin, isManagerOrAdmin } from '../../store.js';
 import { toast } from '../../components/toast.js';
 import { confirmDialog } from '../../components/dialog.js';
 
@@ -89,7 +89,7 @@ export async function renderReportsList(params = {}) {
           </select>
         </div>
 
-        ${isAdmin() ? `
+        ${isManagerOrAdmin() ? `
         <div class="form-group" style="min-width:140px;">
           <label class="form-label">Tutor</label>
           <select id="filter-tutor" class="form-control">
@@ -159,10 +159,10 @@ function renderReportsTable(reports, studentMap, tutorMap) {
         <td>
           <div class="table-actions">
             <button class="btn btn-secondary btn-sm" data-view-report="${r.id}">View</button>
-            ${r.status === 'submitted' && isAdmin()
+             ${r.status === 'submitted' && isManagerOrAdmin()
               ? `<button class="btn btn-accent btn-sm" data-approve-report="${r.id}">Review</button>`
               : ''}
-            ${r.status === 'draft'
+            ${r.status === 'draft' && (isManagerOrAdmin() || r.createdBy === getState('currentUser')?.uid)
               ? `<button class="btn btn-danger btn-sm" data-delete-report="${r.id}" title="Delete this draft">Delete</button>`
               : ''}
           </div>

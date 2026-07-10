@@ -6,7 +6,7 @@ import { getStudents, deactivateStudent, updateStudent } from '../../db.js';
 import { navigate } from '../../router.js';
 import { formatDate, initials, escapeHtml, debounce } from '../../utils.js';
 import { toast } from '../../components/toast.js';
-import { isAdmin } from '../../store.js';
+import { isAdmin, isManagerOrAdmin } from '../../store.js';
 import { confirmDialog } from '../../components/dialog.js';
 
 let allStudents = [];
@@ -21,7 +21,7 @@ export async function renderStudentsList() {
           <h1 class="page-title">Students</h1>
           <p class="page-subtitle">${allStudents.filter(s => s.active !== false).length} active students</p>
         </div>
-        ${isAdmin() ? `
+        ${isManagerOrAdmin() ? `
         <div class="page-header-actions">
           <button class="btn btn-secondary" id="btn-import-students">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -99,7 +99,7 @@ function renderStudentsTable(students) {
           <button class="btn btn-secondary btn-sm" data-student-view="${s.id}" title="View profile">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
-          ${isAdmin() ? `
+          ${isManagerOrAdmin() ? `
           <button class="btn btn-secondary btn-sm" data-student-edit="${s.id}" title="Edit">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
@@ -125,7 +125,7 @@ function renderStudentsTable(students) {
           <th>Student</th>
           <th>Parent / Guardian</th>
           <th>Parent Email</th>
-          <th>Centre</th>
+          <th>School</th>
           <th>Date Joined</th>
           <th>Status</th>
           <th>Actions</th>

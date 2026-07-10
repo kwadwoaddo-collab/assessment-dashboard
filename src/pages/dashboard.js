@@ -34,7 +34,7 @@ export async function renderDashboard() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
             New Report
           </button>
-          ${user?.role === 'admin' ? `
+          ${(user?.role === 'admin' || user?.role === 'manager') ? `
           <button class="btn btn-secondary" id="btn-add-student">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
             Add Student
@@ -82,7 +82,7 @@ export async function renderDashboard() {
           <div class="stat-content">
             <div class="stat-value">${stats.submitted}</div>
             <div class="stat-label">Awaiting Approval</div>
-            ${stats.submitted > 0 && user?.role === 'admin' ? `<div class="stat-trend up">⚡ Action needed</div>` : ''}
+            ${stats.submitted > 0 && (user?.role === 'admin' || user?.role === 'manager') ? `<div class="stat-trend up">⚡ Action needed</div>` : ''}
           </div>
         </div>
 
@@ -148,8 +148,8 @@ export async function renderDashboard() {
         </div>
       </div>
 
-      <!-- Quick Actions (admin only) -->
-      ${stats.submitted > 0 && user?.role === 'admin' ? `
+      <!-- Quick Actions (admin/manager review) -->
+      ${stats.submitted > 0 && (user?.role === 'admin' || user?.role === 'manager') ? `
       <div class="card" style="border-color:rgba(14,165,233,0.3);background:rgba(14,165,233,0.05);">
         <div class="card-header">
           <div>

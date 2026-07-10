@@ -5,7 +5,7 @@
 import { getStudentById, getReportsByStudent, getUserById } from '../../db.js';
 import { navigate } from '../../router.js';
 import { formatDate, escapeHtml, initials, statusLabel, workingLevelClass, SUBJECTS } from '../../utils.js';
-import { isAdmin } from '../../store.js';
+import { isAdmin, isManagerOrAdmin } from '../../store.js';
 
 export async function renderStudentDetail(params = {}) {
   if (!params.id) return `<div class="empty-state"><h3>No student selected</h3></div>`;
@@ -51,7 +51,7 @@ export async function renderStudentDetail(params = {}) {
         </div>
         <div class="page-header-actions">
           <button class="btn btn-secondary" id="btn-back">← Back</button>
-          ${isAdmin() ? `<button class="btn btn-secondary" id="btn-edit-student">Edit Student</button>` : ''}
+          ${isManagerOrAdmin() ? `<button class="btn btn-secondary" id="btn-edit-student">Edit Student</button>` : ''}
           <button class="btn btn-primary" id="btn-new-report">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
             New Report
@@ -91,7 +91,7 @@ export async function renderStudentDetail(params = {}) {
               </div>
               <div>
                 <div class="info-row">
-                  <span class="info-row-label">Centre</span>
+                  <span class="info-row-label">School</span>
                   <span class="info-row-value">${escapeHtml(student.school || '—')}</span>
                 </div>
                 <div class="info-row"><span class="info-row-label">Date Joined Centre</span><span class="info-row-value">${formatDate(student.startDate)}</span></div>

@@ -2,7 +2,7 @@
 // Sidebar Navigation Component
 // ================================================================
 
-import { getState, isAdmin } from '../store.js';
+import { getState, isAdmin, isManagerOrAdmin } from '../store.js';
 import { navigate } from '../router.js';
 import { logout } from '../auth.js';
 import { initials } from '../utils.js';
@@ -24,6 +24,7 @@ export function renderSidebar(pendingCount = 0) {
   const user = getState('currentUser');
   const currentPage = getState('currentPage');
   const admin = isAdmin();
+  const managerOrAdmin = isManagerOrAdmin();
 
   const navLink = (page, icon, label, badge = null) => `
     <button class="nav-link ${currentPage === page ? 'active' : ''}" data-nav="${page}">
@@ -55,8 +56,8 @@ export function renderSidebar(pendingCount = 0) {
       <span class="nav-section-label">Reports</span>
       ${navLink('reports', 'reports', 'All Reports')}
       ${navLink('report-create', 'newreport', 'New Report')}
-      ${admin && pendingCount > 0 ? navLink('reports-pending', 'approve', 'Pending Approval', pendingCount) : ''}
-      ${admin && pendingCount === 0 ? navLink('reports-pending', 'approve', 'Pending Approval') : ''}
+      ${managerOrAdmin && pendingCount > 0 ? navLink('reports-pending', 'approve', 'Pending Approval', pendingCount) : ''}
+      ${managerOrAdmin && pendingCount === 0 ? navLink('reports-pending', 'approve', 'Pending Approval') : ''}
 
       ${admin ? `<span class="nav-section-label">System</span>${navLink('settings', 'settings', 'Settings')}` : ''}
 

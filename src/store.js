@@ -44,3 +44,7 @@ export function isAdmin() {
 export function isTutor() {
   return state.currentUser?.role === 'tutor';
 }
+
+export function isManagerOrAdmin() {
+  return state.currentUser?.role === 'admin' || state.currentUser?.role === 'manager';
+}
