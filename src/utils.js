@@ -118,7 +118,7 @@ export const CENTRES = {
   sydenham: {
     id: 'sydenham',
     name: 'Sydenham After School Club',
-    email: 'info@sydenhamasc.co.uk',
+    email: 'fmorafa@sydenhamasc.co.uk',
     phone: '07584 874710',
     website: 'www.sydenhamasc.co.uk',
   }

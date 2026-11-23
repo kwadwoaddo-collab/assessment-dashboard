@@ -64,7 +64,7 @@ export function renderSettings() {
           <p style="font-size:0.85rem;font-weight:600;color:var(--teal-400);margin-bottom:6px;">✓ Email delivery is active</p>
           <p style="font-size:0.825rem;color:var(--text-secondary);line-height:1.6;">
             Reports are sent automatically when you click <strong>"Send to Parent"</strong>.
-            The PDF is attached directly to the email. Parents can reply to <strong>info@sydenhamasc.co.uk</strong>.
+            The PDF is attached directly to the email. Parents can reply to <strong>fmorafa@sydenhamasc.co.uk</strong>.
           </p>
         </div>
 
@@ -72,7 +72,7 @@ export function renderSettings() {
           <div class="info-block-title">Email Configuration</div>
           <div class="info-row"><span class="info-row-label">Provider</span><span class="info-row-value">Resend (resend.com)</span></div>
           <div class="info-row"><span class="info-row-label">From</span><span class="info-row-value">reports@sprintscaleit.co.uk</span></div>
-          <div class="info-row"><span class="info-row-label">Reply-To</span><span class="info-row-value">info@sydenhamasc.co.uk</span></div>
+          <div class="info-row"><span class="info-row-label">Reply-To</span><span class="info-row-value">fmorafa@sydenhamasc.co.uk</span></div>
           <div class="info-row"><span class="info-row-label">Attachment</span><span class="info-row-value">PDF report included automatically</span></div>
           <div class="info-row"><span class="info-row-label">Limit</span><span class="info-row-value">3,000 emails / month · 100 / day (free tier)</span></div>
         </div>
@@ -85,7 +85,7 @@ export function renderSettings() {
           <strong style="color:var(--text-primary);">Subject:</strong> Assessment Report – [Student Name] – [Date]<br/>
           <strong style="color:var(--text-primary);">Attachment:</strong> Assessment_Report_[Student]_[Subject]_[Date].pdf<br/><br/>
           The email includes the student name, subject, assessment type, and report date in a branded HTML layout.
-          The full PDF report is attached. Parents can reply directly to info@sydenhamasc.co.uk.
+          The full PDF report is attached. Parents can reply directly to fmorafa@sydenhamasc.co.uk.
         </div>
 
         <div style="margin-top:12px;">

@@ -132,7 +132,7 @@ export default async function handler(req, res) {
 
             <p style="margin:0 0 24px;color:#334155;font-size:14px;line-height:1.6;">
               The full report is attached as a PDF. If you have any questions, please contact us at
-              <a href="mailto:info@sydenhamasc.co.uk" style="color:#14b8a6;">info@sydenhamasc.co.uk</a>
+              <a href="mailto:fmorafa@sydenhamasc.co.uk" style="color:#14b8a6;">fmorafa@sydenhamasc.co.uk</a>
               or call <strong>07584 874710</strong>.
             </p>
             <p style="margin:0;color:#334155;font-size:14px;">Kind regards,<br/><strong>Sydenham After School Club</strong></p>
@@ -143,7 +143,7 @@ export default async function handler(req, res) {
         <tr>
           <td style="background:#0f172a;padding:16px 32px;text-align:center;">
             <p style="margin:0;color:#94a3b8;font-size:11px;">
-              info@sydenhamasc.co.uk &nbsp;|&nbsp; 07584 874710 &nbsp;|&nbsp; www.sydenhamasc.co.uk
+              fmorafa@sydenhamasc.co.uk &nbsp;|&nbsp; 07584 874710 &nbsp;|&nbsp; www.sydenhamasc.co.uk
             </p>
             <p style="margin:6px 0 0;color:#475569;font-size:10px;">Confidential – For Parent/Guardian use only</p>
           </td>
@@ -159,7 +159,7 @@ export default async function handler(req, res) {
     const result = await resend.emails.send({
       from:     `${FROM_NAME} <${FROM_ADDRESS}>`,
       to:       [parentEmail],
-      reply_to: 'info@sydenhamasc.co.uk',
+      reply_to: 'fmorafa@sydenhamasc.co.uk',
       subject:  `Assessment Report – ${studentName} – ${reportDate || ''}`.trim(),
       html:     emailHtml,
       attachments: [
