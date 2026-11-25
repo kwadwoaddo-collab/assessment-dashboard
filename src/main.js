@@ -155,11 +155,9 @@ async function boot() {
     `;
     try {
       await completeMagicLinkSignIn(currentUrl);
-      // Clean up the one-time-use query params from the URL without reloading.
-      window.history.replaceState({}, document.title, window.location.pathname);
     } catch (err) {
       console.error('Magic-link sign-in failed:', err);
-      // Surface the error briefly then fall through to the normal login page.
+      // Surface the error briefly then fall through to the normal login/session check.
       document.getElementById('app').innerHTML = `
         <div style="
           position:fixed;inset:0;display:flex;flex-direction:column;
@@ -167,11 +165,14 @@ async function boot() {
           background:#0a0f1e;gap:16px;
         ">
           <p style="color:#f43f5e;font-family:system-ui;font-size:0.95rem;margin:0;max-width:320px;text-align:center">
-            Sign-in link expired or already used. Please request a new one.
+            Sign-in link expired or already used. Please request a new one if you are not signed in.
           </p>
         </div>
       `;
-      await new Promise(r => setTimeout(r, 2500));
+      await new Promise(r => setTimeout(r, 2000));
+    } finally {
+      // Always clean up one-time magic-link query params from the URL (preserving hash)
+      window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
     }
   }
   // ────────────────────────────────────────────────

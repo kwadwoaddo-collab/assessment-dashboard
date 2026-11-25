@@ -18,12 +18,19 @@ let tutors = [];
 let studentMap = {};
 let tutorMap = {};
 
+function canEditReport(report) {
+  const user = getState('currentUser');
+  if (!user || report.status === 'sent') return false;
+  if (isManagerOrAdmin()) return true;
+  return report.createdBy === user.uid && ['draft', 'rejected', 'submitted'].includes(report.status);
+}
+
 export async function renderReportsList(params = {}) {
   try {
     [allReports, students, tutors] = await Promise.all([
       getReports(),
       getStudents(),
-      getUsers({ role: 'tutor' }),
+      getUsers({ role: 'tutor' }).catch(() => []),
     ]);
   } catch (e) {
     return `<div class="empty-state"><h3>Error loading reports</h3><p>${e.message}</p></div>`;
@@ -159,7 +166,10 @@ function renderReportsTable(reports, studentMap, tutorMap) {
         <td>
           <div class="table-actions">
             <button class="btn btn-secondary btn-sm" data-view-report="${r.id}">View</button>
-             ${r.status === 'submitted' && isManagerOrAdmin()
+            ${canEditReport(r)
+              ? `<button class="btn btn-secondary btn-sm" data-edit-report="${r.id}">Edit</button>`
+              : ''}
+            ${r.status === 'submitted' && isManagerOrAdmin()
               ? `<button class="btn btn-accent btn-sm" data-approve-report="${r.id}">Review</button>`
               : ''}
             ${r.status === 'draft' && (isManagerOrAdmin() || r.createdBy === getState('currentUser')?.uid)
@@ -262,6 +272,9 @@ export function initReportsList(params = {}) {
 function bindActions() {
   document.querySelectorAll('[data-view-report]').forEach(btn =>
     btn.addEventListener('click', () => navigate('report-detail', { id: btn.dataset.viewReport }))
+  );
+  document.querySelectorAll('[data-edit-report]').forEach(btn =>
+    btn.addEventListener('click', () => navigate('report-create', { reportId: btn.dataset.editReport }))
   );
   document.querySelectorAll('[data-approve-report]').forEach(btn =>
     btn.addEventListener('click', () => navigate('report-approve', { id: btn.dataset.approveReport }))

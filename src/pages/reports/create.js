@@ -72,7 +72,7 @@ function renderStepIndicator() {
     <div class="step-indicator">
       ${steps.map((s, i) => `
         ${i > 0 ? `<div class="step-connector ${currentStep > s.n ? 'done' : ''}"></div>` : ''}
-        <div class="step ${currentStep === s.n ? 'active' : ''} ${currentStep > s.n ? 'done' : ''}">
+        <div class="step ${currentStep === s.n ? 'active' : ''} ${currentStep > s.n ? 'done' : ''}" ${currentStep === s.n ? 'aria-current="step"' : ''}>
           <div class="step-circle">${currentStep > s.n ? '✓' : s.n}</div>
           <span class="step-label">${s.label}</span>
         </div>
@@ -82,28 +82,30 @@ function renderStepIndicator() {
 
 function renderStep(reportId) {
   const editMode = !!reportId;
-  const adminEdit = editMode && isManagerOrAdmin() && !['draft','rejected'].includes(formData.status);
-  // For admin edits of live reports: save keeps current status; no re-submit needed
-  const saveLabel = adminEdit ? 'Save Changes' : 'Save Draft';
-  const step4Action = adminEdit
-    ? `<button class="btn btn-primary" id="btn-save-admin" style="display: ${currentStep === 4 ? 'flex' : 'none'};">
+  const adminEdit = editMode && isManagerOrAdmin() && !['draft', 'rejected'].includes(formData.status);
+  const tutorSubmittedEdit = editMode && !isManagerOrAdmin() && formData.status === 'submitted';
+  const preserveLiveStatus = adminEdit || tutorSubmittedEdit;
+  // For edits of already-submitted/approved reports: save keeps current status
+  const saveLabel = preserveLiveStatus ? 'Save Changes' : 'Save Draft';
+  const step4Action = preserveLiveStatus
+    ? `<button type="button" class="btn btn-primary" id="btn-save-admin" style="display: ${currentStep === 4 ? 'flex' : 'none'};">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
         Save Changes
       </button>`
-    : `<button class="btn btn-secondary" id="btn-submit-report" style="display: ${currentStep === 4 ? 'flex' : 'none'};">
+    : `<button type="button" class="btn ${isManagerOrAdmin() ? 'btn-secondary' : 'btn-primary'}" id="btn-submit-report" style="display: ${currentStep === 4 ? 'flex' : 'none'};">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         Submit for Approval
       </button>
-      <button class="btn btn-success" id="btn-approve-submit" style="display: ${currentStep === 4 ? 'flex' : 'none'};">
+      ${isManagerOrAdmin() ? `<button type="button" class="btn btn-success" id="btn-approve-submit" style="display: ${currentStep === 4 ? 'flex' : 'none'};">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         Approve &amp; Submit
-      </button>`;
+      </button>` : ''}`;
 
   let content = '';
   if (currentStep === 1) content = renderStep1();
   else if (currentStep === 2) content = renderStep2();
   else if (currentStep === 3) content = renderStep3();
-  else if (currentStep === 4) content = renderStep4(adminEdit);
+  else if (currentStep === 4) content = renderStep4(adminEdit, tutorSubmittedEdit);
 
   return `
     <div>
@@ -113,15 +115,16 @@ function renderStep(reportId) {
           <p class="page-subtitle">
             Step ${currentStep} of 4
             ${adminEdit ? ' · <span style="color:var(--amber-500);font-weight:600;">Editing as Manager — changes save immediately</span>' : ''}
+            ${tutorSubmittedEdit ? ' · <span style="color:var(--accent-400);font-weight:600;">Editing submitted report — saving updates your submission</span>' : ''}
           </p>
         </div>
         <div class="page-header-actions">
-          <button class="btn btn-secondary" id="btn-cancel-report">Cancel</button>
+          <button type="button" class="btn btn-secondary" id="btn-cancel-report">Cancel</button>
         </div>
       </div>
 
       <div class="card">
-        <form id="create-report-form" novalidate onsubmit="event.preventDefault();">
+        <form id="create-report-form" novalidate>
           ${renderStepIndicator()}
           <div id="step-content">
             ${content}
@@ -135,7 +138,7 @@ function renderStep(reportId) {
                 ${saveLabel}
               </button>
               <button type="button" class="btn btn-primary" id="btn-next" style="display: ${currentStep < 4 ? 'flex' : 'none'};">Next →</button>
-              ${step4Action.replace('<button ', '<button type="button" ')}
+              ${step4Action}
             </div>
           </div>
         </form>
@@ -330,11 +333,16 @@ function renderStep3() {
     </div>`;
 }
 
-function renderStep4(adminEdit = false) {
+function renderStep4(adminEdit = false, tutorSubmittedEdit = false) {
   const banner = adminEdit
     ? `<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:12px;padding:16px;margin-bottom:24px;">
         <p style="font-size:0.875rem;color:var(--amber-500);font-weight:600;margin-bottom:6px;">✏️ Manager Edit Mode</p>
         <p style="font-size:0.825rem;color:var(--text-secondary);">You are editing this report as a manager. Saving will update the content immediately and keep the current status (<strong>${formData.status}</strong>). The tutor will not be notified.</p>
+       </div>`
+    : tutorSubmittedEdit
+    ? `<div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.25);border-radius:12px;padding:16px;margin-bottom:24px;">
+        <p style="font-size:0.875rem;color:var(--accent-400);font-weight:600;margin-bottom:6px;">✏️ Updating Submitted Report</p>
+        <p style="font-size:0.825rem;color:var(--text-secondary);">Review your changes below. Clicking <strong>Save Changes</strong> updates this report while keeping it submitted for manager approval.</p>
        </div>`
     : `<div style="background:rgba(20,184,166,0.06);border:1px solid rgba(20,184,166,0.2);border-radius:12px;padding:20px;margin-bottom:24px;">
         <p style="font-size:0.9rem;color:var(--teal-400);font-weight:600;margin-bottom:8px;">✓ Ready to Submit</p>
@@ -438,10 +446,18 @@ function collectStep3() {
 async function saveReport(preserveStatus = false) {
   try {
     if (formData.id) {
-      // Already has an ID — just update the existing document
-      const statusToSave = (preserveStatus && formData.status) ? formData.status : 'draft';
-      await updateReport(formData.id, { ...formData, attachments, status: statusToSave });
-      return formData.id;
+      // Already has an ID — update the existing document.
+      // For tutors revising a rejected report, saving transitions it to 'draft' until resubmitted.
+      let statusToSave = 'draft';
+      if (preserveStatus && formData.status) {
+        statusToSave = (!isManagerOrAdmin() && formData.status === 'rejected')
+          ? 'draft'
+          : formData.status;
+      }
+      const { id: reportId, createdAt: _createdAt, createdBy: _createdBy, ...payload } = formData;
+      await updateReport(reportId, { ...payload, attachments, status: statusToSave });
+      formData.status = statusToSave;
+      return reportId;
     }
 
     // No ID yet — check if a draft already exists for this
@@ -457,9 +473,10 @@ async function saveReport(preserveStatus = false) {
       // go through the update path and don't create yet another duplicate
       formData.id = existing.id;
       formData.status = 'draft';
-      await updateReport(existing.id, { ...formData, attachments, status: 'draft' });
+      const { id: reportId, createdAt: _createdAt, createdBy: _createdBy, ...payload } = formData;
+      await updateReport(reportId, { ...payload, attachments, status: 'draft' });
       toast.info('Resuming your existing draft for this student & subject.');
-      return existing.id;
+      return reportId;
     }
 
     // No existing draft — create a fresh one
@@ -475,6 +492,7 @@ async function saveReport(preserveStatus = false) {
 }
 
 export function initReportCreate(params = {}) {
+  document.getElementById('create-report-form')?.addEventListener('submit', (e) => e.preventDefault());
   document.getElementById('btn-cancel-report')?.addEventListener('click', () => navigate('reports'));
 
   // Init attachment widget if on step 3 and report exists
@@ -498,12 +516,14 @@ export function initReportCreate(params = {}) {
     else if (currentStep === 3) valid = collectStep3();
     if (!valid) return;
 
-    // Auto-save draft when moving to step 3 so the report gets an ID
-    // and attachments (photos/documents) become immediately available.
+    // Auto-save when moving to step 3 so the report gets an ID
+    // and attachments (photos/documents) become immediately available,
+    // without demoting an already-submitted or approved report to draft.
     if (currentStep === 2) {
       const btn = document.getElementById('btn-next');
       if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
-      const id = await saveReport();
+      const preserveLiveStatus = !!params.reportId && !['draft', 'rejected'].includes(formData.status);
+      const id = await saveReport(preserveLiveStatus);
       if (btn) { btn.disabled = false; btn.textContent = 'Next →'; }
       if (!id) return; // save failed — stay on step 2
     }
@@ -513,14 +533,14 @@ export function initReportCreate(params = {}) {
   });
 
   document.getElementById('btn-save-draft')?.addEventListener('click', async () => {
-    if (currentStep === 1) collectStep1();
-    else if (currentStep === 2) collectStep2();
-    else if (currentStep === 3) collectStep3();
+    if (currentStep === 1 && !collectStep1()) return;
+    if (currentStep === 2 && !collectStep2()) return;
+    if (currentStep === 3 && !collectStep3()) return;
     if (!formData.studentId) { toast.error('Please select a student first.'); return; }
-    // Admin editing a live report: preserve status; otherwise save as draft
-    const adminEdit = !!params.reportId && isManagerOrAdmin() && !['draft','rejected'].includes(formData.status);
-    const id = await saveReport(adminEdit);
-    if (id) { toast.success(adminEdit ? 'Report updated' : 'Draft saved'); navigate('report-detail', { id }); }
+    // Editing an already-submitted/approved report: preserve status; otherwise save as draft
+    const preserveLiveStatus = !!params.reportId && !['draft', 'rejected'].includes(formData.status);
+    const id = await saveReport(preserveLiveStatus);
+    if (id) { toast.success(preserveLiveStatus ? 'Report updated' : 'Draft saved'); navigate('report-detail', { id }); }
   });
 
   // Admin quick-save on step 4 (preserves status)

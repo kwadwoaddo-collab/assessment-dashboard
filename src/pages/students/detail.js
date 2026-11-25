@@ -5,7 +5,14 @@
 import { getStudentById, getReportsByStudent, getUserById } from '../../db.js';
 import { navigate } from '../../router.js';
 import { formatDate, escapeHtml, initials, statusLabel, workingLevelClass, SUBJECTS } from '../../utils.js';
-import { isAdmin, isManagerOrAdmin } from '../../store.js';
+import { getState, isAdmin, isManagerOrAdmin } from '../../store.js';
+
+function canEditReport(report) {
+  const user = getState('currentUser');
+  if (!user || report.status === 'sent') return false;
+  if (isManagerOrAdmin()) return true;
+  return report.createdBy === user.uid && ['draft', 'rejected', 'submitted'].includes(report.status);
+}
 
 export async function renderStudentDetail(params = {}) {
   if (!params.id) return `<div class="empty-state"><h3>No student selected</h3></div>`;
@@ -141,7 +148,12 @@ export async function renderStudentDetail(params = {}) {
                         </td>
                         <td><span class="badge badge-${r.status}">${statusLabel(r.status)}</span></td>
                         <td>
-                          <button class="btn btn-secondary btn-sm" data-view-report="${r.id}">View</button>
+                          <div class="table-actions">
+                            <button class="btn btn-secondary btn-sm" data-view-report="${r.id}">View</button>
+                            ${canEditReport(r)
+                              ? `<button class="btn btn-secondary btn-sm" data-edit-report="${r.id}">Edit</button>`
+                              : ''}
+                          </div>
                         </td>
                       </tr>
                     `).join('')}
@@ -194,5 +206,8 @@ export function initStudentDetail(params = {}) {
 
   document.querySelectorAll('[data-view-report]').forEach(btn => {
     btn.addEventListener('click', () => navigate('report-detail', { id: btn.dataset.viewReport }));
+  });
+  document.querySelectorAll('[data-edit-report]').forEach(btn => {
+    btn.addEventListener('click', () => navigate('report-create', { reportId: btn.dataset.editReport }));
   });
 }

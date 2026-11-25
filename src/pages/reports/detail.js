@@ -28,19 +28,19 @@ export async function renderReportDetail(params = {}) {
     if (!report) return `<div class="empty-state"><h3>Report not found</h3></div>`;
     [student, tutor] = await Promise.all([
       getStudentById(report.studentId),
-      getUserById(report.createdBy),
+      getUserById(report.createdBy).catch(() => null),
     ]);
     if (report.approvedBy) {
-      approver = await getUserById(report.approvedBy);
+      approver = await getUserById(report.approvedBy).catch(() => null);
     }
   } catch (e) {
     return `<div class="empty-state"><h3>Error</h3><p>${e.message}</p></div>`;
   }
 
   const user = getState('currentUser');
-  // Tutors can edit their own draft/rejected; admins can edit anything except already-sent
+  // Tutors can edit their own draft/rejected/submitted reports; admins/managers can edit anything except already-sent
   const canEdit = report.status !== 'sent' && (
-    (getState('currentUser')?.uid === report.createdBy && ['draft','rejected'].includes(report.status)) ||
+    (user?.uid === report.createdBy && ['draft', 'rejected', 'submitted'].includes(report.status)) ||
     isManagerOrAdmin()
   );
   const canSubmit = report.status === 'draft' && user?.uid === report.createdBy;
@@ -164,7 +164,7 @@ export async function renderReportDetail(params = {}) {
                 ? `<span class="badge badge-active">${report.attachments.length} file${report.attachments.length !== 1 ? 's' : ''}</span>`
                 : ''}
             </div>
-            ${renderAttachmentWidget(report.attachments || [], { editable: isManagerOrAdmin() && report.status !== 'sent' })}
+            ${renderAttachmentWidget(report.attachments || [], { editable: canEdit })}
           </div>
         </div>
 
@@ -252,16 +252,22 @@ export function initReportDetail(params = {}) {
   document.getElementById('btn-edit')?.addEventListener('click', () => navigate('report-create', { reportId: params.id }));
   document.getElementById('btn-approve-go')?.addEventListener('click', () => navigate('report-approve', { id: params.id }));
 
-   // Init attachment widget (admins/managers can delete from detail view too)
+  // Init attachment widget (owners of editable reports and managers/admins can manage from detail view too)
   const reportEl = document.getElementById('attachment-widget');
-  if (reportEl && isManagerOrAdmin()) {
-    // We need the live report to get attachments for deletion
+  if (reportEl) {
+    // We need the live report to get attachments for deletion/upload
     (async () => {
       const report = await getReportById(params.id);
-      const atts = report?.attachments || [];
-      if (atts.length > 0) {
+      if (!report) return;
+      const user = getState('currentUser');
+      const canEditAttachments = report.status !== 'sent' && (
+        (user?.uid === report.createdBy && ['draft', 'rejected', 'submitted'].includes(report.status)) ||
+        isManagerOrAdmin()
+      );
+      if (canEditAttachments) {
+        const atts = report.attachments || [];
         initAttachmentWidget(atts, {
-          editable: isManagerOrAdmin() && report.status !== 'sent',
+          editable: true,
           reportId: params.id,
           onChange: async (updated) => {
             await updateReport(params.id, { attachments: updated });
@@ -397,9 +403,9 @@ async function loadReportData(id) {
   const report = await getReportById(id);
   const [student, tutor] = await Promise.all([
     getStudentById(report.studentId),
-    getUserById(report.createdBy),
+    getUserById(report.createdBy).catch(() => null),
   ]);
   let approver = null;
-  if (report.approvedBy) approver = await getUserById(report.approvedBy);
+  if (report.approvedBy) approver = await getUserById(report.approvedBy).catch(() => null);
   return [report, student, tutor, approver];
 }

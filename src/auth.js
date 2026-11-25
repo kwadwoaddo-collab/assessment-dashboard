@@ -129,8 +129,9 @@ export async function completeMagicLinkSignIn(url) {
     // Fallback: ask the user (handles the case where the link was opened on a
     // different device / browser than where the request was made).
     email = await promptDialog(
-      'Security Check',
-      'Please enter the email address you used to request the sign-in link:'
+      'Please enter the email address you used to request the sign-in link:',
+      '',
+      { title: 'Security Check', type: 'email' }
     );
     if (!email) throw new Error('Email is required to complete sign-in.');
   }
