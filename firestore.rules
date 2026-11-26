@@ -21,7 +21,7 @@ rules_version = '2';
 //   - parentEmail: string | null (optional, <= 320 chars)
 //   - yearGroup: string | null (optional, <= 50 chars)
 //   - dateOfBirth, startDate: string | timestamp | null (optional)
-//   - tutorAssigned, centreId: string | null (optional, <= 128 chars)
+//   - tutorAssigned, centreId: string | null (optional, <= 128 / 100 chars)
 //   - active: bool (optional)
 //   - createdAt, updatedAt: timestamp | string | null (optional)
 //   - createdBy, updatedBy: string | null (optional, <= 128 chars)
@@ -30,6 +30,7 @@ rules_version = '2';
 //   - studentId: string (required, 1..128 chars)
 //   - createdBy: string (required, == request.auth.uid on create, immutable for tutors)
 //   - status: string (required, 'draft' | 'submitted' | 'approved' | 'rejected' | 'sent')
+//   - id: string | null (optional, <= 128 chars)
 //   - centreId, subject, assessmentType, workingLevel,
 //     homeworkCompletion, attendance, behaviourEngagement: string | null (optional, <= 100 chars)
 //   - assessmentDate: string | timestamp | null (optional)
@@ -37,7 +38,7 @@ rules_version = '2';
 //   - strengths, areasForImprovement, topicsCovered, recommendations,
 //     additionalComments, tutorFeedback, managerComments: string | null (optional, <= 10000 chars)
 //   - rejectionReason: string | null (optional, <= 5000 chars)
-//   - attachments: list (optional, <= 50 items)
+//   - attachments: list | null (optional, <= 50 items)
 //   - createdAt, updatedAt, submittedAt, approvedAt, sentAt: timestamp | string | null (optional)
 //   - updatedBy, submittedBy, approvedBy, sentBy: string | null (optional, <= 128 chars)
 //
@@ -58,200 +59,248 @@ service cloud.firestore {
       return isAuth() && request.auth.uid == userId;
     }
 
-    // ── Safe Role Lookup (deactivated staff receive no role) ─────
-    // Missing `active` defaults to true (`get('active', true) != false`).
+    // ── Single-Lookup Role Helpers ───────────────────────────────
+    // Performs at most ONE exists() and ONE get() lookup per rule evaluation.
+    // Missing `active` defaults to true (`get('active', true) != false`); deactivated staff receive ''.
+    function activeUserRole(userPath) {
+      let u = get(userPath).data;
+      return u.get('active', true) != false ? u.get('role', '') : '';
+    }
+
+    function roleForPath(userPath) {
+      return exists(userPath) ? activeUserRole(userPath) : '';
+    }
+
     function userRole() {
-      let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
-      return isAuth() && exists(userPath) && get(userPath).data.get('active', true) != false
-        ? get(userPath).data.get('role', '')
+      return isAuth()
+        ? roleForPath(/databases/$(database)/documents/users/$(request.auth.uid))
         : '';
     }
 
-    function isAdmin()   { return userRole() == 'admin'; }
-    function isManager() { return userRole() == 'manager'; }
-    function isTutor()   { return userRole() == 'tutor'; }
-    function isStaff()   { return isAdmin() || isManager() || isTutor(); }
+    function isStaffRole(role) {
+      return role in ['admin', 'manager', 'tutor'];
+    }
 
-    // ── Field & Domain Validation Helpers ────────────────────────
+    function isManagerOrAdminRole(role) {
+      return role in ['admin', 'manager'];
+    }
+
+    // ── Compact Field & Immutability Helpers ─────────────────────
     function areImmutableFieldsUnchanged(fields) {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
     }
 
+    function sameField(req, res, field) {
+      return req.get(field, null) == res.get(field, null);
+    }
+
     function isRequiredString(data, field, minLen, maxLen) {
-      return (field in data) && data[field] is string &&
-        data[field].size() >= minLen && data[field].size() <= maxLen;
+      let v = data.get(field, null);
+      return v is string && v.size() >= minLen && v.size() <= maxLen;
     }
 
     function isOptionalString(data, field, maxLen) {
-      return !(field in data) || data[field] == null ||
-        (data[field] is string && data[field].size() <= maxLen);
+      let v = data.get(field, null);
+      return v == null || (v is string && v.size() <= maxLen);
     }
 
     function isOptionalBool(data, field) {
-      return !(field in data) || data[field] == null || data[field] is bool;
+      let v = data.get(field, null);
+      return v == null || v is bool;
     }
 
     function isOptionalDateOrTimestamp(data, field) {
-      return !(field in data) || data[field] == null ||
-        data[field] is timestamp ||
-        (data[field] is string && data[field].size() <= 64);
+      let v = data.get(field, null);
+      return v == null || v is timestamp || (v is string && v.size() <= 64);
     }
 
     function isOptionalScore(data, field) {
-      return !(field in data) || data[field] == null ||
-        (data[field] is number && data[field] >= 0 && data[field] <= 100);
+      let v = data.get(field, null);
+      return v == null || (v is number && v >= 0 && v <= 100);
     }
 
     function isOptionalList(data, field, maxSize) {
-      return !(field in data) || data[field] == null ||
-        (data[field] is list && data[field].size() <= maxSize);
+      let v = data.get(field, null);
+      return v == null || (v is list && v.size() <= maxSize);
     }
 
+    // ── Domain Validators (called on BOTH create and update) ─────
     function isValidUser(data) {
-      return data.keys().size() <= 25 &&
-        isRequiredString(data, 'name', 1, 200) &&
-        isRequiredString(data, 'email', 3, 320) &&
-        ('role' in data) && data.role in ['admin', 'manager', 'tutor'] &&
-        isOptionalBool(data, 'active') &&
-        isOptionalString(data, 'centreId', 100) &&
-        isOptionalString(data, 'displayName', 200) &&
-        isOptionalDateOrTimestamp(data, 'createdAt') &&
-        isOptionalDateOrTimestamp(data, 'updatedAt') &&
-        isOptionalString(data, 'updatedBy', 128);
+      let d = data;
+      return d.keys().size() <= 25 &&
+        isRequiredString(d, 'name', 1, 200) &&
+        isRequiredString(d, 'email', 3, 320) &&
+        d.get('role', null) in ['admin', 'manager', 'tutor'] &&
+        isOptionalBool(d, 'active') &&
+        isOptionalString(d, 'centreId', 100) &&
+        isOptionalString(d, 'displayName', 200) &&
+        isOptionalDateOrTimestamp(d, 'createdAt') &&
+        isOptionalDateOrTimestamp(d, 'updatedAt') &&
+        isOptionalString(d, 'updatedBy', 128);
     }
 
     function isValidStudent(data) {
-      return data.keys().size() <= 35 &&
-        isRequiredString(data, 'studentName', 1, 200) &&
-        isOptionalString(data, 'firstName', 200) &&
-        isOptionalString(data, 'lastName', 200) &&
-        isOptionalString(data, 'parentName', 200) &&
-        isOptionalString(data, 'parentEmail', 320) &&
-        isOptionalString(data, 'yearGroup', 50) &&
-        isOptionalString(data, 'school', 200) &&
-        isOptionalString(data, 'tutorAssigned', 128) &&
-        isOptionalString(data, 'centreId', 100) &&
-        isOptionalDateOrTimestamp(data, 'dateOfBirth') &&
-        isOptionalDateOrTimestamp(data, 'startDate') &&
-        isOptionalBool(data, 'active') &&
-        isOptionalDateOrTimestamp(data, 'createdAt') &&
-        isOptionalString(data, 'createdBy', 128) &&
-        isOptionalDateOrTimestamp(data, 'updatedAt') &&
-        isOptionalString(data, 'updatedBy', 128);
+      let d = data;
+      return d.keys().size() <= 35 &&
+        isRequiredString(d, 'studentName', 1, 200) &&
+        isOptionalString(d, 'firstName', 200) &&
+        isOptionalString(d, 'lastName', 200) &&
+        isOptionalString(d, 'parentName', 200) &&
+        isOptionalString(d, 'parentEmail', 320) &&
+        isOptionalString(d, 'yearGroup', 50) &&
+        isOptionalString(d, 'school', 200) &&
+        isOptionalString(d, 'tutorAssigned', 128) &&
+        isOptionalString(d, 'centreId', 100) &&
+        isOptionalDateOrTimestamp(d, 'dateOfBirth') &&
+        isOptionalDateOrTimestamp(d, 'startDate') &&
+        isOptionalBool(d, 'active') &&
+        isOptionalDateOrTimestamp(d, 'createdAt') &&
+        isOptionalString(d, 'createdBy', 128) &&
+        isOptionalDateOrTimestamp(d, 'updatedAt') &&
+        isOptionalString(d, 'updatedBy', 128);
     }
 
     function isValidReport(data) {
-      return data.keys().size() <= 40 &&
-        isRequiredString(data, 'studentId', 1, 128) &&
-        isRequiredString(data, 'createdBy', 1, 128) &&
-        ('status' in data) && data.status in ['draft', 'submitted', 'approved', 'rejected', 'sent'] &&
-        isOptionalString(data, 'id', 128) &&
-        isOptionalString(data, 'centreId', 100) &&
-        isOptionalString(data, 'subject', 100) &&
-        isOptionalString(data, 'assessmentType', 100) &&
-        isOptionalDateOrTimestamp(data, 'assessmentDate') &&
-        isOptionalString(data, 'workingLevel', 100) &&
-        isOptionalScore(data, 'assessmentScore') &&
-        isOptionalString(data, 'homeworkCompletion', 100) &&
-        isOptionalString(data, 'attendance', 100) &&
-        isOptionalString(data, 'behaviourEngagement', 100) &&
-        isOptionalString(data, 'strengths', 10000) &&
-        isOptionalString(data, 'areasForImprovement', 10000) &&
-        isOptionalString(data, 'topicsCovered', 10000) &&
-        isOptionalString(data, 'recommendations', 10000) &&
-        isOptionalString(data, 'additionalComments', 10000) &&
-        isOptionalString(data, 'tutorFeedback', 10000) &&
-        isOptionalString(data, 'managerComments', 10000) &&
-        isOptionalString(data, 'rejectionReason', 5000) &&
-        isOptionalList(data, 'attachments', 50) &&
-        isOptionalDateOrTimestamp(data, 'createdAt') &&
-        isOptionalDateOrTimestamp(data, 'updatedAt') &&
-        isOptionalString(data, 'updatedBy', 128) &&
-        isOptionalDateOrTimestamp(data, 'submittedAt') &&
-        isOptionalString(data, 'submittedBy', 128) &&
-        isOptionalDateOrTimestamp(data, 'approvedAt') &&
-        isOptionalString(data, 'approvedBy', 128) &&
-        isOptionalDateOrTimestamp(data, 'sentAt') &&
-        isOptionalString(data, 'sentBy', 128);
+      let d = data;
+      return d.keys().size() <= 40 &&
+        isRequiredString(d, 'studentId', 1, 128) &&
+        isRequiredString(d, 'createdBy', 1, 128) &&
+        d.get('status', null) in ['draft', 'submitted', 'approved', 'rejected', 'sent'] &&
+        isOptionalString(d, 'id', 128) &&
+        isOptionalString(d, 'centreId', 100) &&
+        isOptionalString(d, 'subject', 100) &&
+        isOptionalString(d, 'assessmentType', 100) &&
+        isOptionalDateOrTimestamp(d, 'assessmentDate') &&
+        isOptionalString(d, 'workingLevel', 100) &&
+        isOptionalScore(d, 'assessmentScore') &&
+        isOptionalString(d, 'homeworkCompletion', 100) &&
+        isOptionalString(d, 'attendance', 100) &&
+        isOptionalString(d, 'behaviourEngagement', 100) &&
+        isOptionalString(d, 'strengths', 10000) &&
+        isOptionalString(d, 'areasForImprovement', 10000) &&
+        isOptionalString(d, 'topicsCovered', 10000) &&
+        isOptionalString(d, 'recommendations', 10000) &&
+        isOptionalString(d, 'additionalComments', 10000) &&
+        isOptionalString(d, 'tutorFeedback', 10000) &&
+        isOptionalString(d, 'managerComments', 10000) &&
+        isOptionalString(d, 'rejectionReason', 5000) &&
+        isOptionalList(d, 'attachments', 50) &&
+        isOptionalDateOrTimestamp(d, 'createdAt') &&
+        isOptionalDateOrTimestamp(d, 'updatedAt') &&
+        isOptionalString(d, 'updatedBy', 128) &&
+        isOptionalDateOrTimestamp(d, 'submittedAt') &&
+        isOptionalString(d, 'submittedBy', 128) &&
+        isOptionalDateOrTimestamp(d, 'approvedAt') &&
+        isOptionalString(d, 'approvedBy', 128) &&
+        isOptionalDateOrTimestamp(d, 'sentAt') &&
+        isOptionalString(d, 'sentBy', 128);
     }
 
     function isValidCashReceipt(data) {
-      return data.keys().size() >= 1 && data.keys().size() <= 100;
+      let d = data;
+      return d.keys().size() >= 1 && d.keys().size() <= 100;
+    }
+
+    // ── Collection Operation Helpers (single userRole() binding) ─
+    function canUpdateUser(userId) {
+      let role = userRole();
+      let req = request.resource.data;
+      let res = resource.data;
+      return isAuth() && isValidUser(req) && (
+        role == 'admin' ||
+        (request.auth.uid == userId &&
+         res.get('active', true) != false &&
+         areImmutableFieldsUnchanged(['role', 'email', 'active', 'createdAt']) &&
+         sameField(req, res, 'role') &&
+         sameField(req, res, 'email') &&
+         req.get('active', true) == res.get('active', true))
+      );
+    }
+
+    function canCreateReport() {
+      let role = userRole();
+      let req = request.resource.data;
+      return isStaffRole(role) &&
+        isValidReport(req) &&
+        req.createdBy == request.auth.uid &&
+        req.status in ['draft', 'submitted'] &&
+        req.get('approvedBy', null) == null &&
+        req.get('approvedAt', null) == null &&
+        req.get('sentBy', null) == null &&
+        req.get('sentAt', null) == null &&
+        (isManagerOrAdminRole(role) || req.get('managerComments', null) == null);
+    }
+
+    // Fast-path `diff()` check when keys match, plus `sameField` fallback when legacy
+    // documents omit optional null keys (e.g. `managerComments` absent -> `null`).
+    function areTutorProtectedFieldsUnchanged(req, res) {
+      return areImmutableFieldsUnchanged(['createdBy', 'approvedBy', 'approvedAt', 'sentBy', 'sentAt', 'managerComments']) ||
+        (sameField(req, res, 'approvedBy') &&
+         sameField(req, res, 'approvedAt') &&
+         sameField(req, res, 'sentBy') &&
+         sameField(req, res, 'sentAt') &&
+         sameField(req, res, 'managerComments'));
+    }
+
+    function canUpdateReport() {
+      let role = userRole();
+      let req = request.resource.data;
+      let res = resource.data;
+      return isStaffRole(role) &&
+        isValidReport(req) &&
+        sameField(req, res, 'createdAt') &&
+        (
+          isManagerOrAdminRole(role) ||
+          (role == 'tutor' &&
+           res.createdBy == request.auth.uid &&
+           res.status in ['draft', 'rejected', 'submitted'] &&
+           req.createdBy == res.createdBy &&
+           req.status in ['draft', 'submitted'] &&
+           areTutorProtectedFieldsUnchanged(req, res))
+        );
+    }
+
+    function canDeleteReport() {
+      let role = userRole();
+      return isStaffRole(role) &&
+        resource.data.status == 'draft' &&
+        (isManagerOrAdminRole(role) || resource.data.createdBy == request.auth.uid);
     }
 
     // ── Users Collection ─────────────────────────────────────────
     // Authenticated users can always read their own profile (even if deactivated).
     // All active staff (admin, manager, tutor) can read staff records for report lists/details/PDFs.
     match /users/{userId} {
-      allow read:   if isAuth() && (isOwner(userId) || isStaff());
-      allow create: if isAdmin() && isValidUser(request.resource.data);
-      allow update: if isAuth() && isValidUser(request.resource.data) && (
-        isAdmin() ||
-        (isOwner(userId) &&
-         resource.data.get('active', true) != false &&
-         areImmutableFieldsUnchanged(['role', 'email', 'active', 'createdAt']) &&
-         request.resource.data.get('role', null) == resource.data.get('role', null) &&
-         request.resource.data.get('email', null) == resource.data.get('email', null) &&
-         request.resource.data.get('active', true) == resource.data.get('active', true))
-      );
+      allow read:   if isOwner(userId) || isStaffRole(userRole());
+      allow create: if userRole() == 'admin' && isValidUser(request.resource.data);
+      allow update: if canUpdateUser(userId);
       allow delete: if false;
     }
 
     // ── Students Collection ──────────────────────────────────────
     // Active staff can read students; only active admins & managers can create/update.
     match /students/{studentId} {
-      allow read:           if isAuth() && isStaff();
-      allow create, update: if (isAdmin() || isManager()) && isValidStudent(request.resource.data);
+      allow read:           if isStaffRole(userRole());
+      allow create, update: if isManagerOrAdminRole(userRole()) && isValidStudent(request.resource.data);
       allow delete:         if false;
     }
 
     // ── Reports Collection ───────────────────────────────────────
     // Active staff can read all reports and create reports for themselves in draft/submitted status.
-    // Active admins & managers can update any report.
-    // Active tutors can update their own non-approved/non-sent reports without escalating status or approval/sent metadata.
+    // Active admins & managers can update any report (preserving createdAt).
+    // Active tutors can update their own non-approved/non-sent reports without escalating status or approval/sent/manager metadata.
     // Draft reports can be deleted by active admins, managers, or their active creator.
     match /reports/{reportId} {
-      allow read: if isAuth() && isStaff();
-
-      allow create: if isAuth() &&
-        isStaff() &&
-        isValidReport(request.resource.data) &&
-        request.resource.data.createdBy == request.auth.uid &&
-        request.resource.data.status in ['draft', 'submitted'] &&
-        request.resource.data.get('approvedBy', null) == null &&
-        request.resource.data.get('approvedAt', null) == null &&
-        request.resource.data.get('sentBy', null) == null &&
-        request.resource.data.get('sentAt', null) == null;
-
-      allow update: if isAuth() &&
-        isStaff() &&
-        isValidReport(request.resource.data) &&
-        request.resource.data.get('createdAt', null) == resource.data.get('createdAt', null) &&
-        (
-          isAdmin() ||
-          isManager() ||
-          (isTutor() &&
-           resource.data.createdBy == request.auth.uid &&
-           resource.data.status in ['draft', 'rejected', 'submitted'] &&
-           request.resource.data.createdBy == resource.data.createdBy &&
-           request.resource.data.status in ['draft', 'submitted'] &&
-           request.resource.data.get('approvedBy', null) == resource.data.get('approvedBy', null) &&
-           request.resource.data.get('approvedAt', null) == resource.data.get('approvedAt', null) &&
-           request.resource.data.get('sentBy', null) == resource.data.get('sentBy', null) &&
-           request.resource.data.get('sentAt', null) == resource.data.get('sentAt', null) &&
-           request.resource.data.get('managerComments', null) == resource.data.get('managerComments', null))
-        );
-
-      allow delete: if isAuth() &&
-        isStaff() &&
-        (isAdmin() || isManager() || resource.data.createdBy == request.auth.uid) &&
-        resource.data.status == 'draft';
+      allow read:   if isStaffRole(userRole());
+      allow create: if canCreateReport();
+      allow update: if canUpdateReport();
+      allow delete: if canDeleteReport();
     }
 
     // ── Cash Receipts Collection ─────────────────────────────────
     match /cash_receipts/{receiptId} {
-      allow read:           if isAuth() && isStaff();
-      allow create, update: if isAuth() && isStaff() && isValidCashReceipt(request.resource.data);
+      allow read:           if isStaffRole(userRole());
+      allow create, update: if isStaffRole(userRole()) && isValidCashReceipt(request.resource.data);
       allow delete:         if false;
     }
 
